@@ -4,8 +4,9 @@
 #include "SPI.h"
 #include "Lepton_I2C.h"
 #include <math.h>
+#include <opencv2/opencv.hpp>
 
-
+using namespace cv;
 
 #define PACKET_SIZE 164
 #define PACKET_SIZE_UINT16 (PACKET_SIZE/2)
@@ -91,9 +92,10 @@ void LeptonThread::run()
 			column = i % PACKET_SIZE_UINT16 - 2;
 			row = i / PACKET_SIZE_UINT16 ;
 		}
-		std::cout<<"Zmierzona "<<temp_measure(maxValue,lepton_temperature_fpa())<< "  Otoczenia :"<< lepton_temperature_fpa()<< "  "<<lepton_temperature_aux()<<std::endl;
+        //std::cout<<"Zmierzona "<<temp_measure(maxValue,lepton_temperature_fpa())<< "  Otoczenia :"<< lepton_temperature_fpa()<< "  "<<lepton_temperature_aux()<<std::endl;
 		
-	
+        Mat opencvmat(myImage.height(),myImage.width(),CV_8UC3);
+
 
 		switch(mode)
 		{
@@ -102,6 +104,7 @@ void LeptonThread::run()
 			float diff = maxValue - minValue;
 			float scale = 255/diff;
 			QRgb color;
+
 			for(int i=0;i<FRAME_SIZE_UINT16;i++)
 				{
 				if(i % PACKET_SIZE_UINT16 < 2) {
@@ -137,9 +140,22 @@ void LeptonThread::run()
 			break;
 			
 		}
+
+        //convert qimage to cvmat
+/*
+        cv::Mat cvMat(myImage.height(),myImage.width(),CV_8UC3,myImage.bits(),myImage.bytesPerLine());
+        std::vector <Mat> channels;
+        split(cvMat,channels);
+        cv::Mat temp(myImage.height(),myImage.width(),CV_8UC1);
+        temp=channels[0];
+        channels[0]=channels[2];
+        channels[2]=temp;
+        Mat dst;
+        merge(channels,dst);
+        imshow("picture from opencv",dst);
+
 		
-		
-		
+    */
 		//POSTPROCESSING
 		switch(ppmode)
 		{
@@ -293,28 +309,7 @@ void LeptonThread::switchoff_measure()
 measure=false;
 }
 
-/*
-void duplicate_edges(QImage input ,QImage &output,int frame)
-{
-	QImage temp =new QImage(input.width()+2*frame,input.height()+2*frame,QImage::Format_RGB888);
-	for(int i=0;i<temp.width();i++)
-	{
-			for(int j=0;i<temp.height();i++)
-			{
-			if((i<frame)||(j<frame))temp.setPixel(i,j,input.pixel(i,j);
-			if else((i>input.width()+frame)||(j>input.height()+frame))temp.setPixel(i,j,input.pixel(i,j);
-			else
-		
-			}
-			
-				
-			}
-		
-		
-	}
-	
-}
-*/
+
 void LeptonThread::dilatation(QImage input, QImage &output,int kernel_size,int iterations)
 {
 QImage temp =input;

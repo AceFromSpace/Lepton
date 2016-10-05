@@ -13,6 +13,10 @@
 #include "LeptonThread.h"
 #include "MyLabel.h"
 #include <iostream>
+#include <opencv2/opencv.hpp>
+
+         
+using namespace cv;
 
 int main( int argc, char **argv )
 {
@@ -25,11 +29,14 @@ int main( int argc, char **argv )
 	//create an image placeholder for myLabel
 	//fill the top left corner with red, just bcuz
 	QImage myImage;
+    cv::Mat temp= cv::Mat::zeros(240,320,CV_8UC3);
+
 	myImage = QImage(320, 240, QImage::Format_RGB888);
 	QRgb green = qRgb(0,255,0);
 	for(int i=0;i<320;i++) {
 		for(int j=0;j<240;j++) {
 			myImage.setPixel(i, j, green);
+
 		}
 	}
 

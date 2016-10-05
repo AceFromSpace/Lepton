@@ -15,6 +15,7 @@ sdkclean.commands = make -C $${RPI_LIBS}/$${LEPTONSDK} clean
 
 DEPENDPATH += .
 INCLUDEPATH += . $${RPI_LIBS}
+INCLUDEPATH += 'pkg-config --libs opencv'
 
 DESTDIR=.
 OBJECTS_DIR=gen_objs
@@ -26,5 +27,8 @@ SOURCES += *.cpp
 
 unix:LIBS += -L$${RPI_LIBS}/$${LEPTONSDK}/Debug -lLEPTON_SDK
 
+
 unix:QMAKE_CLEAN += -r $(OBJECTS_DIR) $${MOC_DIR}
 
+INCLUDEPATH += `pkg-config --cflags opencv`
+LIBS += `pkg-config --libs opencv`
