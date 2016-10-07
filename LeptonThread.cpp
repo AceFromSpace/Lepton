@@ -31,8 +31,9 @@ LeptonThread::~LeptonThread()
 
 void LeptonThread::run()
 {
-	//create the initial image
-	myImage = QImage(80, 60, QImage::Format_RGB888);
+    int width=80;
+    int height =60;
+
 
 	//open spi port
 	SpiOpenPort(1);
@@ -94,7 +95,7 @@ void LeptonThread::run()
 		}
         //std::cout<<"Zmierzona "<<temp_measure(maxValue,lepton_temperature_fpa())<< "  Otoczenia :"<< lepton_temperature_fpa()<< "  "<<lepton_temperature_aux()<<std::endl;
 		
-        Mat opencvmat(myImage.height(),myImage.width(),CV_8UC3);
+        Mat opencvmat=Mat::zeros(Size(width,height),CV_8UC3);
 
 
 		switch(mode)
@@ -103,7 +104,7 @@ void LeptonThread::run()
 			{
 			float diff = maxValue - minValue;
 			float scale = 255/diff;
-			QRgb color;
+
 
 			for(int i=0;i<FRAME_SIZE_UINT16;i++)
 				{
@@ -111,10 +112,12 @@ void LeptonThread::run()
 					continue;
 				}
 				value = (frameBuffer[i] - minValue) * scale;
-				color = qRgb(colormap[3*value], colormap[3*value+1], colormap[3*value+2]);
 				column = (i % PACKET_SIZE_UINT16 ) - 2;
 				row = i / PACKET_SIZE_UINT16;
-				myImage.setPixel(column, row, color);
+                Scalar color(colormap[3*value],colormap[3*value+1],colormap[3*value+2]);
+                opencvmat.at<Vec3b>(Point(column,row))[0]=color[2];
+                opencvmat.at<Vec3b>(Point(column,row))[1]=color[1];
+                opencvmat.at<Vec3b>(Point(column,row))[2]=color[0];
 				}
 			}
 			break;
@@ -122,40 +125,34 @@ void LeptonThread::run()
 			{
 			float diff = maxValue - minValue;
 			float scale = 255/diff;
-			QRgb color;
-			for(int i=0;i<FRAME_SIZE_UINT16;i++)
+            Scalar color;
+            for(int i=0;i<FRAME_SIZE_UINT16;i++)
 				{
 				if(i % PACKET_SIZE_UINT16 < 2) {
 					continue;
 				}
 				value = (frameBuffer[i] - minValue) * scale;
-				if(value>slider_value)color = qRgb(255,255,255);
-				else color = qRgb(0,0,0);
+                if(value>slider_value) color = Scalar(255,255,255);
+                else color = Scalar(0,0,0);
 				
 				column = (i % PACKET_SIZE_UINT16 ) - 2;
 				row = i / PACKET_SIZE_UINT16;
-				myImage.setPixel(column, row, color);
+                opencvmat.at<Vec3b>(Point(column,row))[0]=color[0];
+                opencvmat.at<Vec3b>(Point(column,row))[1]=color[1];
+                opencvmat.at<Vec3b>(Point(column,row))[2]=color[2];
 				}
 			}
 			break;
 			
 		}
 
-        //convert qimage to cvmat
-/*
-        cv::Mat cvMat(myImage.height(),myImage.width(),CV_8UC3,myImage.bits(),myImage.bytesPerLine());
-        std::vector <Mat> channels;
-        split(cvMat,channels);
-        cv::Mat temp(myImage.height(),myImage.width(),CV_8UC1);
-        temp=channels[0];
-        channels[0]=channels[2];
-        channels[2]=temp;
-        Mat dst;
-        merge(channels,dst);
-        imshow("picture from opencv",dst);
+
+
+
+
 
 		
-    */
+
 		//POSTPROCESSING
 		switch(ppmode)
 		{
@@ -166,54 +163,71 @@ void LeptonThread::run()
 			break;
 			case 1:
 			{
-				dilatation(myImage,myImage,5,1);
+                dilate(opencvmat,opencvmat,Mat());
 			}
 			break;
 			case 2:
 			{
-				erosion(myImage,myImage,5,1);
+                erode(opencvmat,opencvmat,Mat());
 			}
 			break;
 			case 3:
 			{
-				erosion(myImage,myImage,5,1);
-				dilatation(myImage,myImage,5,1);
+                erode(opencvmat,opencvmat,Mat());
+                dilate(opencvmat,opencvmat,Mat());
 				
 			}
 			break;
 			case 4:
 			{
-				dilatation(myImage,myImage,5,1);
-				erosion(myImage,myImage,5,1);
+                dilate(opencvmat,opencvmat,Mat());
+                erode(opencvmat,opencvmat,Mat());
 			}
 			break;
 			case 5:
 			{
-				sobel(myImage,myImage,3);
+            Mat grad_x;
+             Mat grad_y;
+            /*
+                Sobel(opencvmat,grad_x,opencvmat.depth(),1,0,3,BORDER_DEFAULT);
+                Sobel(opencvmat,grad_y,opencvmat.depth(),0,1,3,BORDER_DEFAULT);
+            */
+                 Scharr(opencvmat, grad_x, opencvmat.depth(), 1,0, 1, 0, BORDER_DEFAULT);
+                Scharr(opencvmat, grad_y, opencvmat.depth(), 0,1, 1, 0, BORDER_DEFAULT);
+
+
+                convertScaleAbs(grad_x,grad_x);
+                convertScaleAbs(grad_y,grad_y);
+
+                opencvmat=grad_x+grad_y;
+
+
 			}
 			break;
 			case 6:
 			{
-			mr_skeleton(myImage,myImage);	
+            //mr_skeleton(myImage,myImage);
 			}
 			break;
 			case 7:
 			{
-			mediane(myImage,myImage,5);	
+            medianBlur(opencvmat,opencvmat,3);
 			}
 			break;
 			default :
 			{
-				
+            std::cout<<"Error"<<std::endl;
 			}
 			break;
 		
 		}
 		//MEASURMENT CROSS
-		if(measure==true)draw_cross_center(myImage);
-		
-		//lets emit the signal for update
-		emit updateImage(myImage);
+        //if(measure==true)draw_cross_center(myImage);
+
+        imshow("picture from opencv",opencvmat);
+        cvtColor(opencvmat,opencvmat,CV_BGR2RGB);
+        QImage  myImage2(opencvmat.data,opencvmat.cols,opencvmat.rows,opencvmat.step,QImage::Format_RGB888);
+        emit updateImage(myImage2);
 
 	}
 	
