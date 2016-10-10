@@ -4,9 +4,6 @@
 #include "SPI.h"
 #include "Lepton_I2C.h"
 #include <math.h>
-#include <opencv2/opencv.hpp>
-
-using namespace cv;
 
 #define PACKET_SIZE 164
 #define PACKET_SIZE_UINT16 (PACKET_SIZE/2)
@@ -22,6 +19,8 @@ LeptonThread::LeptonThread() : QThread()
 	ppmode=0;
 	measure=false;
 	mediane_on=false;
+    width=80;
+    height =60;
 }
 
 LeptonThread::~LeptonThread()
@@ -31,11 +30,8 @@ LeptonThread::~LeptonThread()
 
 void LeptonThread::run()
 {
-    int width=80;
-    int height =60;
 
-
-	//open spi port
+    //open spi port
 	SpiOpenPort(1);
 
 	while(true) {
@@ -147,12 +143,6 @@ void LeptonThread::run()
 		}
 
 
-
-
-
-
-		
-
 		//POSTPROCESSING
 		switch(ppmode)
 		{
@@ -186,13 +176,13 @@ void LeptonThread::run()
 			break;
 			case 5:
 			{
-            Mat grad_x;
+             Mat grad_x;
              Mat grad_y;
-            /*
-                Sobel(opencvmat,grad_x,opencvmat.depth(),1,0,3,BORDER_DEFAULT);
-                Sobel(opencvmat,grad_y,opencvmat.depth(),0,1,3,BORDER_DEFAULT);
-            */
-                 Scharr(opencvmat, grad_x, opencvmat.depth(), 1,0, 1, 0, BORDER_DEFAULT);
+
+              //  Sobel(opencvmat,grad_x,opencvmat.depth(),1,0,3,BORDER_DEFAULT);
+              //  Sobel(opencvmat,grad_y,opencvmat.depth(),0,1,3,BORDER_DEFAULT);
+
+                Scharr(opencvmat, grad_x, opencvmat.depth(), 1,0, 1, 0, BORDER_DEFAULT);
                 Scharr(opencvmat, grad_y, opencvmat.depth(), 0,1, 1, 0, BORDER_DEFAULT);
 
 
@@ -206,7 +196,7 @@ void LeptonThread::run()
 			break;
 			case 6:
 			{
-            //mr_skeleton(myImage,myImage);
+            mr_skeleton(opencvmat,opencvmat);
 			}
 			break;
 			case 7:
@@ -237,41 +227,33 @@ void LeptonThread::run()
 
 bool LeptonThread::return_mode()
 {
-if(mode==1)return true;
-return false;
-	
+    if(mode==1)return true;
+    return false;
 }
-
 void LeptonThread::change_colormap_rainbow()
 {
-	
 	colormap=colormap_rainbow;	
 }
 void LeptonThread::change_colormap_gray()
 {
 	colormap=colormap_grayscale;
 }  
-
 void LeptonThread::change_colormap_iron()
 {
-	  
 	 colormap=colormap_ironblack;
 }
-
-void LeptonThread::performFFC() {
-	//perform FFC
+void LeptonThread::performFFC()
+{
 	lepton_perform_ffc();
 }
 void LeptonThread::enableAGC()
 {
 	lepton_enable_agc();	
 }
-
 void LeptonThread::disableAGC()
 {
 	lepton_disable_agc();	
 }
-
 void LeptonThread::set_binary_mode()
 {
 	mode=1;
@@ -284,383 +266,72 @@ void LeptonThread::set_normal_mode()
 }
 void LeptonThread::change_slider_value(int value)
 {
-slider_value=value;
+    slider_value=value;
 }
 void LeptonThread::switchon_dilatation()  
 {
-ppmode=1;
-}
+    ppmode=1;
+    }
 void LeptonThread::switchon_erosion()
 {
-ppmode=2;	
+    ppmode=2;
 }
 void LeptonThread::switchon_open()
 {
-ppmode=3;	
+    ppmode=3;
 }
 void LeptonThread::switchon_close()
 {
-ppmode=4;	
+    ppmode=4;
 }
 void LeptonThread::switchon_sobel()
 {
-ppmode=5;	
+    ppmode=5;
 }
 void LeptonThread::switchon_skeleton()
 {
-ppmode=6;	
+    ppmode=6;
 }
 void LeptonThread::switchon_mediane()
 {
-ppmode=7;	
+    ppmode=7;
 }
 void LeptonThread::switchon_measure()
 {
-measure=true;
+    measure=true;
 }
 void LeptonThread::switchoff_measure()
 {
-measure=false;
+    measure=false;
 }
 
-
-void LeptonThread::dilatation(QImage input, QImage &output,int kernel_size,int iterations)
+void LeptonThread::mr_skeleton(Mat input, Mat &output)
 {
-QImage temp =input;
-QImage temp2 =input;
-for(int t=0;t<iterations;t++)
-	{
-	for(int i=0;i<input.width();i++) 
-		{
-			for(int j=0;j<input.height();j++) 
-			{	
-				QRgb new_value=temp.pixel(i,j);
-				for(int kh=-1*kernel_size/2;kh<=kernel_size/2;kh++)
-				{
-					for(int kv=-1*kernel_size/2;kv<=kernel_size/2;kv++)
-					{
-						if(i+kh>=0 && i+kh<input.width()&&j+kv>=0&&j+kv<input.height())
-						{
-							if(temp.pixel(i+kh,j+kv)>new_value)new_value=temp.pixel(i+kh,j+kv);	
-						}
-					}
-				}
-				temp2.setPixel(i,j,new_value);
-			}
-		}	
-		temp=temp2;
-	}
-	output=temp;
-	
-}
-void LeptonThread::cross_dilatation(QImage input, QImage &output,int kernel_size,int iterations)
-{
-QImage temp =input;
-QImage temp2 =input;
-for(int t=0;t<iterations;t++)
-	{
-	for(int i=0;i<input.width();i++) 
-		{
-			for(int j=0;j<input.height();j++) 
-			{	
-				QRgb new_value=temp.pixel(i,j);
-				for(int kh=-1*kernel_size/2;kh<=kernel_size/2;kh++)
-				{
-					if(i+kh>=0 && i+kh<input.width())
-						{
-							if(temp.pixel(i+kh,j)>new_value)new_value=temp.pixel(i+kh,j);	
-						}
-				}
-				for(int kv=-1*kernel_size/2;kv<=kernel_size/2;kv++)
-					{
-						if(j+kv>=0&&j+kv<input.height())
-						{
-							if(temp.pixel(i,j+kv)>new_value)new_value=temp.pixel(i,j+kv);	
-						}
-					}
-				temp2.setPixel(i,j,new_value);
-			}
-		}	
-		temp=temp2;
-	}
-	output=temp;
-	
-}
-void LeptonThread::cross_erosion(QImage input, QImage &output,int kernel_size,int iterations)
-{
-QImage temp =input;
-QImage temp2 =input;
-for(int t=0;t<iterations;t++)
-	{
-	for(int i=0;i<input.width();i++) 
-		{
-			for(int j=0;j<input.height();j++) 
-			{	
-				QRgb new_value=temp.pixel(i,j);
-				for(int kh=-1*kernel_size/2;kh<=kernel_size/2;kh++)
-				{
-					if(i+kh>=0 && i+kh<input.width())
-						{
-							if(temp.pixel(i+kh,j)<new_value)new_value=temp.pixel(i+kh,j);	
-						}
-				}
-				for(int kv=-1*kernel_size/2;kv<=kernel_size/2;kv++)
-					{
-						if(j+kv>=0&&j+kv<input.height())
-						{
-							if(temp.pixel(i,j+kv)<new_value)new_value=temp.pixel(i,j+kv);	
-						}
-					}
-				temp2.setPixel(i,j,new_value);
-			}
-		}	
-		temp=temp2;
-	}
-	output=temp;
-}
 
-void LeptonThread::erosion(QImage input, QImage &output,int kernel_size,int iterations)
-{
-QImage temp =input;
-QImage temp2 =input;
-for(int t=0;t<iterations;t++)
-	{
-	for(int i=0;i<input.width();i++) 
-		{
-			for(int j=0;j<input.height();j++) 
-			{	
-				QRgb new_value=temp.pixel(i,j);
-				for(int kh=-1*kernel_size/2;kh<=kernel_size/2;kh++)
-				{
-					for(int kv=-1*kernel_size/2;kv<=kernel_size/2;kv++)
-					{
-						if(i+kh>=0 && i+kh<input.width()&&j+kv>=0&&j+kv<input.height())
-						{
-							if(temp.pixel(i+kh,j+kv)<new_value)new_value=temp.pixel(i+kh,j+kv);	
-						}
-					}
-				}
-				temp2.setPixel(i,j,new_value);
-			}
-		}	
-		temp=temp2;
-	}
-	output=temp;
-}
+Mat skel=Mat::zeros(Size(width,height),CV_8UC3);
+Mat eroded=Mat::zeros(Size(width,height),CV_8UC3);
+Mat temp=Mat::zeros(Size(width,height),CV_8UC3);
+Mat empty=Mat::zeros(input.size(),input.type());
+input.copyTo(temp);
 
-void LeptonThread::sobel(QImage input, QImage &output,int kernel_size)
-{
-QImage temp =input;
-
-
-for(int i=kernel_size/2;i<(input.width()-kernel_size/2);i++) 
-	{
-		for(int j=kernel_size/2;j<(input.height()-kernel_size/2);j++) 
-		{	
-			int new_value_v=0;
-			int new_value_h=0;
-			if(kernel_size==3)
-			{
-				new_value_v= -1*input.pixel(i-1,j-1)-2*input.pixel(i,j-1)-1*input.pixel(i+1,j-1)+1*input.pixel(i+1,j+1)+2*input.pixel(i,j+1)+1*input.pixel(i-1,j+1);
-				if (new_value_v<0)new_value_v= -1*new_value_v;
-				new_value_h= -1*input.pixel(i-1,j-1)-2*input.pixel(i-1,j)-1*input.pixel(i-1,j+1)+1*input.pixel(i+1,j+1)+2*input.pixel(i+1,j)+1*input.pixel(i+1,j-1);
-				if (new_value_h<0)new_value_h= -1*new_value_h;
-			}
-			else if (kernel_size==5)
-			{
-				new_value_v= -1*input.pixel(i-2,j-2)-4*input.pixel(i-1,j-2)- 6*input.pixel(i,j-2)-4*input.pixel(i+1,j-2)-1*input.pixel(i+2,j-2)
-							 -2*input.pixel(i-2,j-1)-8*input.pixel(i-1,j-1)-12*input.pixel(i,j-1)-8*input.pixel(i+1,j-1)-2*input.pixel(i+2,j-1)
-							 +2*input.pixel(i-2,j+1)+8*input.pixel(i-1,j+1)+12*input.pixel(i,j+1)+8*input.pixel(i+1,j+1)+2*input.pixel(i+2,j+1)
-							 +1*input.pixel(i-2,j+2)+4*input.pixel(i-1,j+2)+ 6*input.pixel(i,j+2)+4*input.pixel(i+1,j+2)+1*input.pixel(i+2,j+2);
-				if (new_value_v<0)new_value_v= -1*new_value_v;
-				new_value_h= -1*input.pixel(i-2,j-2)-4*input.pixel(i-2,j-1)- 6*input.pixel(i-2,j)-4*input.pixel(i-2,j+1)-1*input.pixel(i-2,j+2)
-							 -2*input.pixel(i-1,j-2)-8*input.pixel(i-1,j-1)-12*input.pixel(i-1,j)-8*input.pixel(i-1,j+1)-2*input.pixel(i-1,j+2)
-							 +2*input.pixel(i-1,j-2)+8*input.pixel(i+1,j-1)+12*input.pixel(i+1,j)+8*input.pixel(i+1,j+1)+2*input.pixel(i+1,j+2)
-							 +1*input.pixel(i+2,j-2)+4*input.pixel(i+2,j-1)+ 6*input.pixel(i+2,j)+4*input.pixel(i+2,j+1)+1*input.pixel(i+2,j+2);
-				if (new_value_h<0)new_value_h= -1*new_value_h;
-				
-			
-			}
-			temp.setPixel(i,j,new_value_v+new_value_h);
-		}
-	}	
-output=temp;
-}
-
-void LeptonThread::mr_skeleton(QImage input, QImage &output)
-{
-	
-QImage temp = input;
-QImage skel = QImage(input.width(),input.height(),QImage::Format_RGB888);
-QImage empty = QImage(input.width(),input.height(),QImage::Format_RGB888);
-QImage eroded = QImage(input.width(),input.height(),QImage::Format_RGB888);
-
-get_black(skel);
-get_black(empty);
-get_black(eroded);
+Mat element = getStructuringElement(MORPH_CROSS,Size(3,3));
 
 do
-	{
-	cross_erosion(input,eroded,3,1);
-	cross_dilatation(eroded,temp,3,1);
-	bit_not(temp,temp);
-	bit_and(input,temp,temp);
-	bit_or(skel,temp,skel);
-	cross_erosion(input,input,3,1);
+    {
+    erode(input,eroded,element);
+    dilate(eroded,temp,element);
+    temp= ~temp;
+    temp= temp & input;
+    skel = skel | temp;
+    erode(input,input,element);
 
-
-	}
-while(!(empty==input));
-output=skel;	
-
-}
-
-void LeptonThread::bit_not(QImage input,QImage &output)
-{
-for(int i=0;i<input.width();i++) 
-		{
-			for(int j=0;j<input.height();j++) 
-			{	
-				
-				int temp=~input.pixel(i,j);
-				output.setPixel(i,j,temp);
-				
-			}
-		}	
-}
-
-void LeptonThread::bit_and(QImage input1,QImage input2,QImage &output)
-{
-for(int i=0;i<input1.width();i++) 
-		{
-			for(int j=0;j<input1.height();j++) 
-			{
-				int temp=input1.pixel(i,j)&input2.pixel(i,j);
-				output.setPixel(i,j,temp);	
-			}
-		}	
-}
-
-void LeptonThread::bit_or(QImage input1,QImage input2,QImage &output)
-{
-for(int i=0;i<input1.width();i++) 
-		{
-			for(int j=0;j<input1.height();j++) 
-			{	
-				
-				int temp=input1.pixel(i,j)|input2.pixel(i,j);
-				output.setPixel(i,j,temp);
-			}
-		}	
-}
-
-void LeptonThread::get_black(QImage &inputoutput)
-{
-for(int i=0;i<inputoutput.width();i++) 
-		{
-			for(int j=0;j<inputoutput.height();j++) 
-			{	
-				inputoutput.setPixel(i,j,0);
-			}
-		}	
-}
-
-void LeptonThread::draw_cross_center(QImage &inputoutput)
-{
-	int cross_radius=3;
-	for(int i=inputoutput.width()/2-cross_radius;i<=inputoutput.width()/2+cross_radius;i++) 
-	{
-				inputoutput.setPixel(i,inputoutput.height()/2,0);
-	}	
-	for(int j=inputoutput.height()/2-cross_radius;j<=inputoutput.height()/2+cross_radius;j++) 
-	{	
-				inputoutput.setPixel(inputoutput.width()/2,j,0);
-	}
-	
-}
-
-double LeptonThread::temp_measure(int val,int amb_temp)
-{
-	/*//double  temp =0.0465*val-349.44;
-	double delta= 346.48 - 4*0.1278*(7372.6-val);
-	double sq_delta= sqrt(delta); 
-	double temp =(-1* 18.614 -sq_delta)/0.256;*/
-	double temp =(0.0217*val)+amb_temp/100-177.77;
-	return temp;
+    imshow("",input);
+    }
+while(input.empty());
+output=skel;
 
 }
-void LeptonThread::mediane(QImage input, QImage &output,int kernel_size)
-{
 
-QImage temp =input;
-for(int i=0;i<input.width();i++) 
-		{
-			for(int j=0;j<input.height();j++) 
-			{	
-				int values_under_kernel[kernel_size*kernel_size];
-				int iter=0;
-				
-				for(int kh=-1*kernel_size/2;kh<=kernel_size/2;kh++)
-				{
-					for(int kv=-1*kernel_size/2;kv<=kernel_size/2;kv++)
-					{
-						if(i+kh>=0 && i+kh<input.width()&&j+kv>=0&&j+kv<input.height())
-						{
-							values_under_kernel[iter]=input.pixel(i+kh,j+kv);
-							iter++;
-						}
-					}
-				}
-				iter=0;
-				bubble_sort(values_under_kernel,kernel_size*kernel_size);
-				temp.setPixel(i,j,values_under_kernel[kernel_size*kernel_size/2]);
-			}
-		}	
-		
-	
-	output=temp;	
-}
-
-
-void LeptonThread::bubble_sort(int tab[],int size)
-{
-for(int j=2;j<size;j++)
-{
-	for(int i =1;i<size;i++)
-		{
-		if(tab[i-1]>tab[i])
-			{
-				int temp = tab[i];
-				tab[i]=tab[i-1];
-				tab[i-1]=temp;
-
-
-			}
-		}
-	}
-}
-int LeptonThread::find_mediane_in_tab(int tab[],int size)
-{
-	int most_popular=0;
-	int temp=0;
-	int mp_index=0;
-	for(int i =1;i<size;i++)
-	{
-		if(tab[i-1]==tab[i])
-			{
-			temp++;
-			if(temp>most_popular)
-				{
-				most_popular=temp;
-				mp_index=i;
-				}		
-			}
-		else temp=0;
-	
-	}
-	if(most_popular>1)return tab[mp_index];
-	return 0;
-}
 	
 	
 	

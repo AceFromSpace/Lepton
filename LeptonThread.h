@@ -11,6 +11,11 @@
 #include <QImage>
 #include <QSlider>
 
+#include <opencv2/opencv.hpp>
+
+using namespace cv;
+
+
 #define PACKET_SIZE 164
 #define PACKET_SIZE_UINT16 (PACKET_SIZE/2)
 #define PACKETS_PER_FRAME 60
@@ -56,30 +61,19 @@ signals:
 
 private:
 
-  QImage myImage;
+  int width;
+  int height;
   const int *colormap;
   int mode;//0-normal , 1- binary
   int slider_value;
   int ppmode;
   bool measure;
   bool mediane_on;
+
   
-  void duplicate_edges(QImage input ,QImage &output);
-  void dilatation(QImage input, QImage &output,int kernel_size,int iterations);
-  void cross_dilatation(QImage input, QImage &output,int kernel_size,int iterations);
-  void erosion(QImage input, QImage &output,int kernel_size,int iterations);
-  void cross_erosion(QImage input, QImage &output,int kernel_size,int iterations);
-  void sobel(QImage input, QImage &output,int kernel_size);//kernel size 5 or 3 only
-  void mr_skeleton(QImage input, QImage &output);
-  void bit_not(QImage input,QImage &output);
-  void bit_and(QImage input1,QImage input2, QImage &output);
-  void bit_or(QImage input1,QImage input2, QImage &output);
-  void get_black(QImage &inputoutput);
-  void draw_cross_center(QImage &inputoutput);//measurment symbol
-  double temp_measure(int val,int amb_temp);
-  void mediane(QImage input, QImage &output,int kernel_size);
-  void bubble_sort(int tab[],int size);
-  int find_mediane_in_tab(int tab[],int size);
+
+  void mr_skeleton(Mat input, Mat &output);
+
   
   uint8_t result[PACKET_SIZE*PACKETS_PER_FRAME];
   uint16_t *frameBuffer;
