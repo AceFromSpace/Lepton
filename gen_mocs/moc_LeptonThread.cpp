@@ -22,7 +22,7 @@ static const uint qt_meta_data_LeptonThread[] = {
        6,       // revision
        0,       // classname
        0,    0, // classinfo
-      20,   14, // methods
+      21,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -50,8 +50,9 @@ static const uint qt_meta_data_LeptonThread[] = {
      305,   33,   33,   33, 0x0a,
      322,   33,   33,   33, 0x0a,
      342,   33,   33,   33, 0x0a,
-     361,   33,   33,   33, 0x0a,
-     381,   33,   33,   33, 0x0a,
+     359,   33,   33,   33, 0x0a,
+     377,   33,   33,   33, 0x0a,
+     396,   33,   33,   33, 0x0a,
 
        0        // eod
 };
@@ -67,8 +68,8 @@ static const char qt_meta_stringdata_LeptonThread[] = {
     "switchon_dilatation()\0switchon_erosion()\0"
     "switchon_open()\0switchon_close()\0"
     "switchon_sobel()\0switchon_skeleton()\0"
-    "switchon_measure()\0switchoff_measure()\0"
-    "switchon_mediane()\0"
+    "switchon_learn()\0switchoff_learn()\0"
+    "switchon_mediane()\0make_snapshot()\0"
 };
 
 void LeptonThread::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
@@ -94,9 +95,10 @@ void LeptonThread::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id
         case 14: _t->switchon_close(); break;
         case 15: _t->switchon_sobel(); break;
         case 16: _t->switchon_skeleton(); break;
-        case 17: _t->switchon_measure(); break;
-        case 18: _t->switchoff_measure(); break;
+        case 17: _t->switchon_learn(); break;
+        case 18: _t->switchoff_learn(); break;
         case 19: _t->switchon_mediane(); break;
+        case 20: _t->make_snapshot(); break;
         default: ;
         }
     }
@@ -134,9 +136,9 @@ int LeptonThread::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 20)
+        if (_id < 21)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 20;
+        _id -= 21;
     }
     return _id;
 }

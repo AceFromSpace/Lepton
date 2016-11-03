@@ -4,6 +4,8 @@
 #include "SPI.h"
 #include "Lepton_I2C.h"
 #include <math.h>
+#include <string>
+#include <iostream>
 
 #define PACKET_SIZE 164
 #define PACKET_SIZE_UINT16 (PACKET_SIZE/2)
@@ -11,13 +13,15 @@
 #define FRAME_SIZE_UINT16 (PACKET_SIZE_UINT16*PACKETS_PER_FRAME)
 #define FPS 27;
 
+
+
 LeptonThread::LeptonThread() : QThread()
 {
 	mode = 0; //normal display mode
 	colormap = colormap_rainbow;
 	slider_value=0;
 	ppmode=0;
-	measure=false;
+    learn=false;
 	mediane_on=false;
     width=80;
     height =60;
@@ -89,9 +93,9 @@ void LeptonThread::run()
 			column = i % PACKET_SIZE_UINT16 - 2;
 			row = i / PACKET_SIZE_UINT16 ;
 		}
-        //std::cout<<"Zmierzona "<<temp_measure(maxValue,lepton_temperature_fpa())<< "  Otoczenia :"<< lepton_temperature_fpa()<< "  "<<lepton_temperature_aux()<<std::endl;
+
 		
-        Mat opencvmat=Mat::zeros(Size(width,height),CV_8UC3);
+        opencvmat=Mat::zeros(Size(width,height),CV_8UC3);
 
 
 		switch(mode)
@@ -143,86 +147,18 @@ void LeptonThread::run()
 		}
 
 
-		//POSTPROCESSING
-		switch(ppmode)
-		{
-			case 0:
-			{
-				
-			}
-			break;
-			case 1:
-			{
-                dilate(opencvmat,opencvmat,Mat());
-			}
-			break;
-			case 2:
-			{
-                erode(opencvmat,opencvmat,Mat());
-			}
-			break;
-			case 3:
-			{
-                erode(opencvmat,opencvmat,Mat());
-                dilate(opencvmat,opencvmat,Mat());
-				
-			}
-			break;
-			case 4:
-			{
-                dilate(opencvmat,opencvmat,Mat());
-                erode(opencvmat,opencvmat,Mat());
-			}
-			break;
-			case 5:
-			{
-             Mat grad_x;
-             Mat grad_y;
+        postprocessing();
 
-              //  Sobel(opencvmat,grad_x,opencvmat.depth(),1,0,3,BORDER_DEFAULT);
-              //  Sobel(opencvmat,grad_y,opencvmat.depth(),0,1,3,BORDER_DEFAULT);
-
-                Scharr(opencvmat, grad_x, opencvmat.depth(), 1,0, 1, 0, BORDER_DEFAULT);
-                Scharr(opencvmat, grad_y, opencvmat.depth(), 0,1, 1, 0, BORDER_DEFAULT);
-
-
-                convertScaleAbs(grad_x,grad_x);
-                convertScaleAbs(grad_y,grad_y);
-
-                opencvmat=grad_x+grad_y;
-
-
-			}
-			break;
-			case 6:
-			{
-            mr_skeleton(opencvmat,opencvmat);
-			}
-			break;
-			case 7:
-			{
-            medianBlur(opencvmat,opencvmat,3);
-			}
-			break;
-			default :
-			{
-            std::cout<<"Error"<<std::endl;
-			}
-			break;
-		
-		}
-		//MEASURMENT CROSS
-        //if(measure==true)draw_cross_center(myImage);
 
         imshow("picture from opencv",opencvmat);
         cvtColor(opencvmat,opencvmat,CV_BGR2RGB);
-        QImage  myImage2(opencvmat.data,opencvmat.cols,opencvmat.rows,opencvmat.step,QImage::Format_RGB888);
-        emit updateImage(myImage2);
+        QImage  myImage(opencvmat.data,opencvmat.cols,opencvmat.rows,opencvmat.step,QImage::Format_RGB888);
+        emit updateImage(myImage);
 
 	}
 	
 	//finally, close SPI port just bcuz
-	SpiClosePort(0);
+    SpiClosePort(1);
 }
 
 bool LeptonThread::return_mode()
@@ -296,15 +232,28 @@ void LeptonThread::switchon_mediane()
 {
     ppmode=7;
 }
-void LeptonThread::switchon_measure()
+void LeptonThread::switchon_learn()
 {
-    measure=true;
+    learn=true;
 }
-void LeptonThread::switchoff_measure()
+void LeptonThread::switchoff_learn()
 {
-    measure=false;
+    learn=false;
+}
+void LeptonThread::make_snapshot()
+{
+    time_t t = time(0);
+    struct tm * now =localtime(& t);
+    std::ostringstream ss;
+    ss<<now->tm_year + now->tm_mon + now->tm_mday;
+    namedWindow(ss.str(),CV_WINDOW_NORMAL);
+    setWindowProperty(ss.str(),CV_WND_PROP_FULLSCREEN,CV_WINDOW_KEEPRATIO);
+    cvtColor(opencvmat,opencvmat,CV_BGR2RGB);
+    imshow(ss.str(),opencvmat);
+    imwrite(ss.str()+".jpg",opencvmat);
 }
 
+//voids
 void LeptonThread::mr_skeleton(Mat input, Mat &output)
 {
 
@@ -324,17 +273,87 @@ do
     temp= temp & input;
     skel = skel | temp;
     erode(input,input,element);
-
-    imshow("",input);
     }
 while(input.empty());
 output=skel;
 
 }
 
+void LeptonThread::finding_edges(Mat input, Mat &output)
+{
+    Mat grad_x;
+    Mat grad_y;
+
+     //  Sobel(opencvmat,grad_x,opencvmat.depth(),1,0,3,BORDER_DEFAULT);
+     //  Sobel(opencvmat,grad_y,opencvmat.depth(),0,1,3,BORDER_DEFAULT);
+
+       Scharr(input, grad_x, input.depth(), 1,0, 1, 0, BORDER_DEFAULT);
+       Scharr(input, grad_y, input.depth(), 0,1, 1, 0, BORDER_DEFAULT);
+
+       convertScaleAbs(grad_x,grad_x);
+       convertScaleAbs(grad_y,grad_y);
+
+       output=grad_x+grad_y;
+}
 	
-	
-	
+void LeptonThread::postprocessing()
+{
+    switch(ppmode)
+    {
+        case 0:
+        {
+
+        }
+        break;
+        case 1:
+        {
+            dilate(opencvmat,opencvmat,Mat());
+        }
+        break;
+        case 2:
+        {
+            erode(opencvmat,opencvmat,Mat());
+        }
+        break;
+        case 3:
+        {
+            erode(opencvmat,opencvmat,Mat());
+            dilate(opencvmat,opencvmat,Mat());
+
+        }
+        break;
+        case 4:
+        {
+            dilate(opencvmat,opencvmat,Mat());
+            erode(opencvmat,opencvmat,Mat());
+        }
+        break;
+        case 5:
+        {
+            finding_edges(opencvmat,opencvmat);
+
+        }
+        break;
+        case 6:
+        {
+        mr_skeleton(opencvmat,opencvmat);
+        }
+        break;
+        case 7:
+        {
+        medianBlur(opencvmat,opencvmat,3);
+        }
+        break;
+        default :
+        {
+        std::cout<<"Error"<<std::endl;
+        }
+        break;
+
+    }
+
+
+}
 	
 	
 	

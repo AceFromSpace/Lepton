@@ -73,17 +73,23 @@ int main( int argc, char **argv )
 	QPushButton *button_skeleton = new QPushButton("Skeleton", myWidget);
 	button_skeleton ->setGeometry(390, 320, 100, 30);
 	
-	QPushButton *button_measureon = new QPushButton("Measure on", myWidget);
+    QPushButton *button_measureon = new QPushButton("Learn on", myWidget);
 	button_measureon->setGeometry(520, 255, 100, 30);
-	QPushButton *button_measureoff = new QPushButton("Measure off", myWidget);
+    QPushButton *button_measureoff = new QPushButton("Learn off", myWidget);
 	button_measureoff->setGeometry(520, 290, 100, 30);
 	QPushButton *button_mediane = new QPushButton("Mediane",myWidget);
 	button_mediane -> setGeometry(520,320,100,30);
 	
-	QPushButton *button_agc_en = new QPushButton("AGC ON",myWidget);
+
+    QPushButton *button_fullscreen = new QPushButton("Fullscreen",myWidget);
+    button_fullscreen-> setGeometry(650,220,100,30);
+    QPushButton *button_agc_en = new QPushButton("AGC ON",myWidget);
 	button_agc_en-> setGeometry(650,255,100,30);
 	QPushButton *button_agc_dis = new QPushButton("AGC OFF",myWidget);
 	button_agc_dis-> setGeometry(650,290,100,30);
+    QPushButton *button_snap_shot = new QPushButton("Snapshot",myWidget);
+    button_snap_shot -> setGeometry(650,320,100,30);
+
 	
 	QSlider *binarization_threshold = new QSlider(Qt::Horizontal,myWidget);
 	binarization_threshold -> setGeometry(375,10,175,30);
@@ -100,7 +106,7 @@ int main( int argc, char **argv )
 	LeptonThread *thread = new LeptonThread();
 	QObject::connect(thread, SIGNAL(updateImage(QImage)), &myLabel, SLOT(setImage(QImage)));
 	
-	//connect ffc buttons to the thread's actions
+
 	QObject::connect(button1, SIGNAL(clicked()), thread, SLOT(performFFC()));
 	QObject::connect(button_rainbow, SIGNAL(clicked()),thread,SLOT(change_colormap_rainbow()));
 	QObject::connect(button_grayscale, SIGNAL(clicked()),thread,SLOT(change_colormap_gray()));
@@ -113,12 +119,13 @@ int main( int argc, char **argv )
 	QObject::connect(button_close, SIGNAL(clicked()),thread,SLOT(switchon_close()));
 	QObject::connect(button_sobel, SIGNAL(clicked()),thread,SLOT(switchon_sobel()));
 	QObject::connect(button_skeleton, SIGNAL(clicked()),thread,SLOT(switchon_skeleton()));
-	QObject::connect(button_measureoff, SIGNAL(clicked()),thread,SLOT(switchoff_measure()));
-	QObject::connect(button_measureon, SIGNAL(clicked()),thread,SLOT(switchon_measure()));
+    QObject::connect(button_measureon, SIGNAL(clicked()),thread,SLOT(switchon_learn()));
+    QObject::connect(button_measureoff, SIGNAL(clicked()),thread,SLOT(switchoff_learn()));
 	QObject::connect(button_mediane, SIGNAL(clicked()),thread,SLOT(switchon_mediane()));
 	QObject::connect(button_agc_en, SIGNAL(clicked()),thread,SLOT(enableAGC()));
 	QObject::connect(button_agc_dis, SIGNAL(clicked()),thread,SLOT(disableAGC()));
-	
+    QObject::connect(button_snap_shot, SIGNAL(clicked()),thread,SLOT(make_snapshot()));
+
 	QObject::connect(binarization_threshold, SIGNAL(valueChanged(int)),thread,SLOT(change_slider_value(int)));
 	//QObject::connect(temperature_label, SIGNAL(clicked()),thread,SLOT(setText(temp_measure())));	
 		

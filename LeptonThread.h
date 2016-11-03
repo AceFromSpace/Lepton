@@ -4,6 +4,8 @@
 #include <ctime>
 #include <stdint.h>
 #include <iostream>
+#include <ctime>
+#include <string>
 
 #include <QThread>
 #include <QtCore>
@@ -44,16 +46,19 @@ public slots:
   void set_normal_mode();
   void set_binary_mode();
   void change_slider_value(int value);
+
   void switchon_dilatation();
   void switchon_erosion();
   void switchon_open();
   void switchon_close();
   void switchon_sobel();
   void switchon_skeleton();
-  void switchon_measure();
-  void switchoff_measure();
+  void switchon_learn();
+  void switchoff_learn();
   void switchon_mediane();
-	
+
+  void make_snapshot();
+
 signals:
 
   void updateText(QString);
@@ -61,19 +66,21 @@ signals:
 
 private:
 
-  int width;
-  int height;
-  const int *colormap;
-  int mode;//0-normal , 1- binary
-  int slider_value;
-  int ppmode;
-  bool measure;
-  bool mediane_on;
+   Mat opencvmat;
+   int width;
+   int height;
+   const int *colormap;
+   int mode;//0-normal , 1- binary
+   int slider_value;
+   int ppmode;
+   bool learn;
+   bool mediane_on;
+
 
   
-
+  void postprocessing();
   void mr_skeleton(Mat input, Mat &output);
-
+  void finding_edges(Mat input, Mat &output);
   
   uint8_t result[PACKET_SIZE*PACKETS_PER_FRAME];
   uint16_t *frameBuffer;
