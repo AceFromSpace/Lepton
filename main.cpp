@@ -9,6 +9,9 @@
 #include <QtDebug>
 #include <QString>
 #include <QPushButton>
+#include <QCheckBox>
+#include <QMenu>
+#include <QMenuBar>
 
 #include "LeptonThread.h"
 #include "MyLabel.h"
@@ -20,18 +23,16 @@ using namespace cv;
 
 int main( int argc, char **argv )
 {
-	//create the app
+    //create the app
 	QApplication a( argc, argv );
 	
 	QWidget *myWidget = new QWidget;
-	myWidget->setGeometry(400, 300, 800, 350);
+    myWidget->setGeometry(10, 50, 800, 350);
 
 	//create an image placeholder for myLabel
 	//fill the top left corner with red, just bcuz
-	QImage myImage;
-    cv::Mat temp= cv::Mat::zeros(240,320,CV_8UC3);
+    QImage myImage= QImage(320, 240, QImage::Format_RGB888);
 
-	myImage = QImage(320, 240, QImage::Format_RGB888);
 	QRgb green = qRgb(0,255,0);
 	for(int i=0;i<320;i++) {
 		for(int j=0;j<240;j++) {
@@ -39,6 +40,14 @@ int main( int argc, char **argv )
 
 		}
 	}
+/*
+    QAction *MenuErode = new QAction("&Erode",myWidget);
+    QMenu *Processing;
+    Processing = menuBar()->addMenu(&Processing);
+    Processing->addAction(MenuErode);
+*/
+
+
 
 	//create a label, and set it's image to the placeholder
 	MyLabel myLabel(myWidget);
@@ -73,10 +82,10 @@ int main( int argc, char **argv )
 	QPushButton *button_skeleton = new QPushButton("Skeleton", myWidget);
 	button_skeleton ->setGeometry(390, 320, 100, 30);
 	
-    QPushButton *button_measureon = new QPushButton("Learn on", myWidget);
-	button_measureon->setGeometry(520, 255, 100, 30);
-    QPushButton *button_measureoff = new QPushButton("Learn off", myWidget);
-	button_measureoff->setGeometry(520, 290, 100, 30);
+    QPushButton *button_learnon = new QPushButton("Learn on", myWidget);
+    button_learnon->setGeometry(520, 255, 100, 30);
+    QPushButton *button_learnoff = new QPushButton("Learn off", myWidget);
+    button_learnoff->setGeometry(520, 290, 100, 30);
 	QPushButton *button_mediane = new QPushButton("Mediane",myWidget);
 	button_mediane -> setGeometry(520,320,100,30);
 	
@@ -90,14 +99,29 @@ int main( int argc, char **argv )
     QPushButton *button_snap_shot = new QPushButton("Snapshot",myWidget);
     button_snap_shot -> setGeometry(650,320,100,30);
 
-	
+
+
+    QPushButton *button_find_contour =new QPushButton("Contour",myWidget);
+    button_find_contour->setGeometry(650,50,100,30);
+    QPushButton *button_separate_hand = new QPushButton("Separate",myWidget);
+    button_separate_hand ->setGeometry(650,80,100,30);
+
+    QCheckBox *checkbox_hist = new QCheckBox("histogram",myWidget);
+    checkbox_hist ->setGeometry(650,130,100,30);
+
+    QCheckBox *checkbox_hull = new QCheckBox("hull",myWidget);
+    checkbox_hull ->setGeometry(650,160,100,30);
+
+
 	QSlider *binarization_threshold = new QSlider(Qt::Horizontal,myWidget);
 	binarization_threshold -> setGeometry(375,10,175,30);
 	binarization_threshold -> setMinimum(0);
 	binarization_threshold -> setMaximum(255);
 	binarization_threshold -> setTickPosition(QSlider::TicksBelow);
 	binarization_threshold -> setTickInterval(10);
-	
+    binarization_threshold->setValue(150);
+
+
 	QLabel *temperature_label= new QLabel("text",myWidget);
 	temperature_label-> setGeometry(375,70,30,30);
 	
@@ -106,7 +130,6 @@ int main( int argc, char **argv )
 	LeptonThread *thread = new LeptonThread();
 	QObject::connect(thread, SIGNAL(updateImage(QImage)), &myLabel, SLOT(setImage(QImage)));
 	
-
 	QObject::connect(button1, SIGNAL(clicked()), thread, SLOT(performFFC()));
 	QObject::connect(button_rainbow, SIGNAL(clicked()),thread,SLOT(change_colormap_rainbow()));
 	QObject::connect(button_grayscale, SIGNAL(clicked()),thread,SLOT(change_colormap_gray()));
@@ -119,16 +142,20 @@ int main( int argc, char **argv )
 	QObject::connect(button_close, SIGNAL(clicked()),thread,SLOT(switchon_close()));
 	QObject::connect(button_sobel, SIGNAL(clicked()),thread,SLOT(switchon_sobel()));
 	QObject::connect(button_skeleton, SIGNAL(clicked()),thread,SLOT(switchon_skeleton()));
-    QObject::connect(button_measureon, SIGNAL(clicked()),thread,SLOT(switchon_learn()));
-    QObject::connect(button_measureoff, SIGNAL(clicked()),thread,SLOT(switchoff_learn()));
+    QObject::connect(button_learnon, SIGNAL(clicked()),thread,SLOT(switchon_learn()));
+    QObject::connect(button_learnoff, SIGNAL(clicked()),thread,SLOT(switchoff_learn()));
 	QObject::connect(button_mediane, SIGNAL(clicked()),thread,SLOT(switchon_mediane()));
 	QObject::connect(button_agc_en, SIGNAL(clicked()),thread,SLOT(enableAGC()));
 	QObject::connect(button_agc_dis, SIGNAL(clicked()),thread,SLOT(disableAGC()));
     QObject::connect(button_snap_shot, SIGNAL(clicked()),thread,SLOT(make_snapshot()));
+    QObject::connect(button_find_contour,SIGNAL(clicked()),thread,SLOT(find_countour()));
+    QObject::connect(button_separate_hand, SIGNAL(clicked()),thread,SLOT(separate_hand()));
 
 	QObject::connect(binarization_threshold, SIGNAL(valueChanged(int)),thread,SLOT(change_slider_value(int)));
-	//QObject::connect(temperature_label, SIGNAL(clicked()),thread,SLOT(setText(temp_measure())));	
-		
+
+    QObject::connect(checkbox_hist, SIGNAL(toggled(bool)),thread,SLOT(switchon_histogram()));
+    QObject::connect(checkbox_hull, SIGNAL(toggled(bool)),thread,SLOT(switchon_hull()));
+
 	
 	
 	thread->start();

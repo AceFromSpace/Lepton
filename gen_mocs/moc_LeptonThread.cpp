@@ -22,7 +22,7 @@ static const uint qt_meta_data_LeptonThread[] = {
        6,       // revision
        0,       // classname
        0,    0, // classinfo
-      21,   14, // methods
+      26,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -53,6 +53,11 @@ static const uint qt_meta_data_LeptonThread[] = {
      359,   33,   33,   33, 0x0a,
      377,   33,   33,   33, 0x0a,
      396,   33,   33,   33, 0x0a,
+     417,   33,   33,   33, 0x0a,
+     433,  488,   33,   33, 0x0a,
+     500,   33,   33,   33, 0x0a,
+     516,   33,   33,   33, 0x0a,
+     532,   33,   33,   33, 0x0a,
 
        0        // eod
 };
@@ -69,7 +74,11 @@ static const char qt_meta_stringdata_LeptonThread[] = {
     "switchon_open()\0switchon_close()\0"
     "switchon_sobel()\0switchon_skeleton()\0"
     "switchon_learn()\0switchoff_learn()\0"
-    "switchon_mediane()\0make_snapshot()\0"
+    "switchon_mediane()\0switchon_histogram()\0"
+    "switchon_hull()\0"
+    "draw_convex_hull(Mat,std::vector<std::vector<Point> >)\0"
+    "image,conto\0make_snapshot()\0find_countour()\0"
+    "separate_hand()\0"
 };
 
 void LeptonThread::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
@@ -98,7 +107,12 @@ void LeptonThread::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id
         case 17: _t->switchon_learn(); break;
         case 18: _t->switchoff_learn(); break;
         case 19: _t->switchon_mediane(); break;
-        case 20: _t->make_snapshot(); break;
+        case 20: _t->switchon_histogram(); break;
+        case 21: _t->switchon_hull(); break;
+        case 22: _t->draw_convex_hull((*reinterpret_cast< Mat(*)>(_a[1])),(*reinterpret_cast< std::vector<std::vector<Point> >(*)>(_a[2]))); break;
+        case 23: _t->make_snapshot(); break;
+        case 24: _t->find_countour(); break;
+        case 25: _t->separate_hand(); break;
         default: ;
         }
     }
@@ -136,9 +150,9 @@ int LeptonThread::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 21)
+        if (_id < 26)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 21;
+        _id -= 26;
     }
     return _id;
 }

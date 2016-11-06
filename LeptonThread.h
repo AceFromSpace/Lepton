@@ -4,6 +4,7 @@
 #include <ctime>
 #include <stdint.h>
 #include <iostream>
+#include<fstream>
 #include <ctime>
 #include <string>
 
@@ -12,6 +13,7 @@
 #include <QPixmap>
 #include <QImage>
 #include <QSlider>
+#include <QMessageBox>
 
 #include <opencv2/opencv.hpp>
 
@@ -56,8 +58,13 @@ public slots:
   void switchon_learn();
   void switchoff_learn();
   void switchon_mediane();
+  void switchon_histogram();
+  void switchon_hull();
 
+  void draw_convex_hull(Mat image,std::vector<std::vector<Point> > conto);
   void make_snapshot();
+  void find_countour();
+  void separate_hand();//make mask from the biggest contour and use it with orginal image
 
 signals:
 
@@ -66,7 +73,12 @@ signals:
 
 private:
 
+   Mat opencvmat_base;//value 0-255 1 channel
    Mat opencvmat;
+   int hist[3][256];
+   Mat image_histogram;
+   int mode_hull;
+   Mat cont;
    int width;
    int height;
    const int *colormap;
@@ -75,12 +87,18 @@ private:
    int ppmode;
    bool learn;
    bool mediane_on;
+   bool histogram_on;
+
 
 
   
   void postprocessing();
   void mr_skeleton(Mat input, Mat &output);
   void finding_edges(Mat input, Mat &output);
+  void show_hist(Mat image);
+  void get_hist(Mat image);
+  void clean_hist();
+  void save_hist();
   
   uint8_t result[PACKET_SIZE*PACKETS_PER_FRAME];
   uint16_t *frameBuffer;
