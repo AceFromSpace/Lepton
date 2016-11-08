@@ -62,12 +62,14 @@ public slots:
   void switchon_conting_countour();
   void switchon_line();
   void switchon_recognize();
+  void switchon_rescale();
 
   double draw_convex_hull(Mat image,std::vector<std::vector<Point> > conto,int biggest);
   void make_snapshot();
   void histogram_alternative(Mat image);
   double counting_contour(Mat image,Mat mask);
   void separate_hand();//make mask from the biggest contour and use it with orginal image
+  Mat rescale_hand(Mat image_mask);
 
 signals:
 
@@ -86,7 +88,7 @@ private:
    Mat image_hull;
    Mat image_histogram;
    Mat image_params;
-
+   Mat opencvmat_values;
    int hist[3][256];
 
    bool mode;//0-normal , 1- binary
@@ -96,6 +98,7 @@ private:
    bool counting_contours_on;
    bool draw_line;
    bool recognize;
+   bool rescale;
    int ppmode;
 
    int width;
@@ -105,7 +108,7 @@ private:
    int slider_value_binary;
    int slider_value_canny;
 
-
+   void cut_wirst(Mat img_hand);
    void recognize_gesture(double hull, double conts);
    void postprocessing(Mat image);
    void mr_skeleton(Mat input, Mat &output);

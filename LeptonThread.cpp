@@ -24,6 +24,7 @@ LeptonThread::LeptonThread() : QThread()
     mode_hull=false;
     draw_line =false;
     recognize =false;
+    rescale =false;
     colormap = colormap_rainbow;
     ppmode=0;
     slider_value_binary=150;
@@ -35,6 +36,7 @@ LeptonThread::LeptonThread() : QThread()
     cont=Mat::zeros(opencvmat.size(),CV_8UC1);
     mask=Mat::zeros(opencvmat.size(),CV_8UC1);
     image_hull=Mat::zeros(opencvmat.size(),CV_8UC1);
+
 }
 
 LeptonThread::~LeptonThread()
@@ -103,9 +105,9 @@ void LeptonThread::run()
 			row = i / PACKET_SIZE_UINT16 ;
 		}
 
-		
         opencvmat=Mat::zeros(Size(width,height),CV_8UC3);
         opencvmat_base=Mat::zeros(Size(width,height),CV_8UC1);
+        opencvmat_values=Mat::zeros(Size(width,height),CV_16UC1);
 
 			float diff = maxValue - minValue;
 			float scale = 255/diff;
@@ -124,7 +126,7 @@ void LeptonThread::run()
                     opencvmat.at<Vec3b>(Point(column,row))[2]=color[0];
 
                     opencvmat_base.at<uchar>(Point(column,row))=value;
-
+                    opencvmat_values.at<short>(Point(column,row))=(frameBuffer[i] - minValue);
                 }
 
         postprocessing(opencvmat);
@@ -199,7 +201,7 @@ void LeptonThread::finding_edges(Mat input, Mat &output)
 
 void LeptonThread::separate_hand()
 {
-    Mat temp=Mat::ones(opencvmat_base.size(),CV_8UC1);
+    Mat temp=Mat::zeros(opencvmat_base.size(),CV_8UC1);
     cont=Mat::zeros(opencvmat.size(),CV_8UC1);
     opencvmat_base.copyTo(temp);
     threshold(temp,temp,slider_value_binary,255,THRESH_BINARY);
@@ -209,21 +211,25 @@ void LeptonThread::separate_hand()
     mask = Mat::zeros(opencvmat.size(),CV_8UC3);
 
     int index_biggest=0;
-    for(int i =0;i<contours.size();i++)
+    for(uint i =0;i<contours.size();i++)
     {
         if(contours[i].size()>contours[index_biggest].size())index_biggest=i;
     }
 
     drawContours(mask,contours,index_biggest,Scalar(255,255,255),CV_FILLED);
-    cont = opencvmat& mask;
 
     double hull_coverage;
     double contour_ratio;
+    if(rescale)cont= rescale_hand(mask);
+    else cont = mask& opencvmat;
     if(mode_hull) hull_coverage = draw_convex_hull(cont,contours,index_biggest);
     if(histogram_on) histogram_alternative(cont);
     if(counting_contours_on) contour_ratio=counting_contour(cont,mask);
     if(recognize)recognize_gesture(hull_coverage,contour_ratio);
 
+    Size new_size(400,300);
+    resize(cont,cont,new_size);
+    imshow("contour",cont);
 }
 
 double LeptonThread::draw_convex_hull(Mat image, std::vector<std::vector<Point> > conto, int biggest)
@@ -341,7 +347,7 @@ double LeptonThread::counting_contour(Mat image, Mat mask)
     std::vector<std::vector<cv::Point> > contours;
     findContours (temp,contours,CV_RETR_LIST,CV_CHAIN_APPROX_SIMPLE);//CV_CHAIN_APPROX_SIMPLE , CV_CHAIN_APPROX_TC89_L1, CV_CHAIN_APPROX_TC89_KCOS,CV_CHAIN_APPROX_NONE
     int all_contours=0;
-    for(int i = 0; i<contours.size();i++ )
+    for(uint i = 0; i<contours.size();i++ )
     {
         all_contours+=contours[i].size();
     }
@@ -425,6 +431,60 @@ void LeptonThread::recognize_gesture(double hull,double conts)
     {
         emit updateTextReco("Stone or paper");
     }
+
+}
+
+Mat LeptonThread::rescale_hand(Mat image_mask)
+{
+
+    int minvalue = 65535;
+    int maxvalue = 0;
+    Mat mask_gray=Mat::zeros(image_mask.size(),CV_8UC1);
+    cvtColor(mask, mask_gray,CV_BGR2GRAY);
+
+    for(int i=0;i<mask_gray.cols;i++)
+    {
+     for(int j=0;j<mask_gray.rows;j++)
+        {        
+        int pixel_val = opencvmat_values.at<short>(Point(i,j));
+        uchar pixel_con = mask_gray.at<uchar>(Point(i,j));
+        if(pixel_con==0)continue;
+
+        if(pixel_val<minvalue)minvalue=pixel_val;
+        else if(pixel_val>maxvalue)maxvalue=pixel_val;
+
+        }
+    }
+
+    emit updateTextContours(QString::number(maxvalue)+" "+QString::number(minvalue));
+
+    float diff = maxvalue - minvalue;
+    float scale = 255/diff;
+
+    Mat temp=Mat::zeros(Size(width,height),CV_8UC3);
+
+    short value;
+    for(int i=0;i<mask_gray.cols;i++)
+    {
+     for(int j=0;j<mask_gray.rows;j++)
+        {
+         uchar pixel_con = mask_gray.at<uchar>(Point(i,j));
+         if(pixel_con == 0)continue;
+         int pixel = (int)(opencvmat_values.at<short>(Point(i,j))-minvalue)*scale;
+         Scalar color(colormap[3*pixel],colormap[3*pixel+1],colormap[3*pixel+2]);
+         temp.at<Vec3b>(Point(i,j))[0]=color[2];
+         temp.at<Vec3b>(Point(i,j))[1]=color[1];
+         temp.at<Vec3b>(Point(i,j))[2]=color[0];
+        }
+    }
+  return temp;
+
+}
+
+void LeptonThread::cut_wirst(Mat img_hand)
+{
+
+
 
 }
 //////////////////////////
@@ -523,7 +583,10 @@ void LeptonThread::switchon_recognize()
 {
     recognize=!recognize;
 }
-	
+void LeptonThread::switchon_rescale()
+{
+    rescale=!rescale;
+}
 	
 	
 	

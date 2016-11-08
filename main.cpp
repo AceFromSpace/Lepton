@@ -150,7 +150,7 @@ void create_checkboxes(QWidget *mywig,QThread *thr)
 {
     QCheckBox *checkbox_reco = new QCheckBox("Recognize",mywig);
     checkbox_reco ->setGeometry(650,70,100,30);
-    QCheckBox *checkbox_line = new QCheckBox("line",mywig);
+    QCheckBox *checkbox_line = new QCheckBox("cut wirst",mywig);
     checkbox_line ->setGeometry(650,100,100,30);
     QCheckBox *checkbox_hist = new QCheckBox("histogram",mywig);
     checkbox_hist ->setGeometry(650,130,100,30);
@@ -158,12 +158,15 @@ void create_checkboxes(QWidget *mywig,QThread *thr)
     checkbox_hull ->setGeometry(650,160,100,30);
     QCheckBox *checkbox_count_contour = new QCheckBox("contour",mywig);
     checkbox_count_contour ->setGeometry(650,190,100,30);
+    QCheckBox *checkbox_rescale = new QCheckBox("rescale",mywig);
+    checkbox_rescale ->setGeometry(650,210,100,30);
 
     QObject::connect(checkbox_reco, SIGNAL(toggled(bool)),thr,SLOT(switchon_recognize()));
     QObject::connect(checkbox_line, SIGNAL(toggled(bool)),thr,SLOT(switchon_line()));
     QObject::connect(checkbox_hist, SIGNAL(toggled(bool)),thr,SLOT(switchon_histogram()));
     QObject::connect(checkbox_hull, SIGNAL(toggled(bool)),thr,SLOT(switchon_hull()));
     QObject::connect(checkbox_count_contour, SIGNAL(toggled(bool)),thr,SLOT(switchon_conting_countour()));
+    QObject::connect(checkbox_rescale, SIGNAL(toggled(bool)),thr,SLOT(switchon_rescale()));
 }
 
 void create_screen(QWidget *mywig,QThread *thr)
