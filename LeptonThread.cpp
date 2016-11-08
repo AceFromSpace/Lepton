@@ -17,17 +17,24 @@
 
 LeptonThread::LeptonThread() : QThread()
 {
-	mode = 0; //normal display mode
-	colormap = colormap_rainbow;
-    slider_value=120;
-	ppmode=0;
-    learn=false;
-	mediane_on=false;
+    mode = false; //normal display mode
+    mediane_on=false;
     histogram_on= false;
+    counting_contours_on=false;
     mode_hull=false;
+    draw_line =false;
+    recognize =false;
+    colormap = colormap_rainbow;
+    ppmode=0;
+    slider_value_binary=150;
+    slider_value_canny=80;
     width=80;
     height =60;
-    clean_hist();
+    image_params=Mat::zeros(Size(width,height),CV_8UC1);
+    image_params=255;
+    cont=Mat::zeros(opencvmat.size(),CV_8UC1);
+    mask=Mat::zeros(opencvmat.size(),CV_8UC1);
+    image_hull=Mat::zeros(opencvmat.size(),CV_8UC1);
 }
 
 LeptonThread::~LeptonThread()
@@ -119,27 +126,16 @@ void LeptonThread::run()
                     opencvmat_base.at<uchar>(Point(column,row))=value;
 
                 }
-        postprocessing();
 
-        Mat output = Mat::zeros(opencvmat.size(),CV_8UC3);
-
-        if(mode)
-        {
-            opencvmat_base.copyTo(output);
-            threshold(output,output,slider_value,255,THRESH_BINARY);
-            cvtColor(output,output,CV_GRAY2BGR);
-        }
-        else
-        {
-             opencvmat.copyTo(output);
-              cvtColor(output,output,CV_BGR2RGB);
-        }
-
+        postprocessing(opencvmat);
+        Mat output;
+        opencvmat.copyTo(output);
+        cvtColor(output,output,CV_BGR2RGB);
         QImage  myImage(output.data,output.cols,output.rows,output.step,QImage::Format_RGB888);
         emit updateImage(myImage);
+
 	}
-	
-	//finally, close SPI port just bcuz
+
     SpiClosePort(1);
 }
 
@@ -153,16 +149,14 @@ void LeptonThread::make_snapshot()
     ss<<now->tm_hour*3600 +now->tm_min*60+now->tm_sec;
     namedWindow(ss.str(),CV_WINDOW_NORMAL);
     setWindowProperty(ss.str(),CV_WND_PROP_FULLSCREEN,CV_WINDOW_KEEPRATIO);
-/*
-    Mat output= Mat::zeros(Size(cont.cols+image_histogram.cols+1,image_histogram.rows+1),CV_8UC3);
-    Mat roi2(output,Rect(0,0,image_histogram.cols,image_histogram.rows));
-    Mat roi1(output,Rect(0,0,cont.cols,cont.rows));
-    cont.copyTo(roi1);
-    image_histogram.copyTo(roi2);
-*/
-    imshow(ss.str(),cont);
+
+    imshow(ss.str(),opencvmat);
+
+    imwrite(ss.str()+"t"+".jpg",opencvmat);
+    imwrite(ss.str()+"m" +".jpg",mask);
     imwrite(ss.str()+".jpg",cont);
-   // imshow(ss.str(),image_histogram);
+    imwrite(ss.str()+"hu"+".jpg",image_hull);
+    imwrite(ss.str()+"d"+".jpg",image_params);
     imwrite(ss.str()+"h"+".jpg",image_histogram);
 
 }
@@ -194,230 +188,87 @@ output=skel;
 
 void LeptonThread::finding_edges(Mat input, Mat &output)
 {
-    Mat grad_x;
-    Mat grad_y;
-
-     //  Sobel(opencvmat,grad_x,opencvmat.depth(),1,0,3,BORDER_DEFAULT);
-     //  Sobel(opencvmat,grad_y,opencvmat.depth(),0,1,3,BORDER_DEFAULT);
-
-       Scharr(input, grad_x, input.depth(), 1,0, 1, 0, BORDER_DEFAULT);
-       Scharr(input, grad_y, input.depth(), 0,1, 1, 0, BORDER_DEFAULT);
-
-       convertScaleAbs(grad_x,grad_x);
-       convertScaleAbs(grad_y,grad_y);
-
-       output=grad_x+grad_y;
-}
-
-void LeptonThread::find_countour()
-{
-   Mat temp=Mat::zeros(opencvmat.size(),CV_8UC1);
-
-   opencvmat.copyTo(temp);
-   cvtColor(temp,temp,CV_BGR2GRAY);
-   std::vector<std::vector<cv::Point> > contours;
-   findContours (temp,contours,CV_RETR_EXTERNAL,CV_CHAIN_APPROX_NONE);
-   Mat cont =Mat::zeros(opencvmat.size(),CV_8UC1);
-
-   int index_biggest=0;
-
-   for(int i =0;i<contours.size();i++)
-   {
-       if(contours[i].size()>contours[index_biggest].size())index_biggest=i;
-   }
-
-
-   drawContours(cont,contours,index_biggest,Scalar(255,255,255),CV_FILLED);
-   imshow("contours",cont);
-
-}
-
-void LeptonThread::show_hist(Mat image)
-{
-get_hist(image);
-int margin=10;
-int line_width=2;
-image_histogram=Mat::ones(Size(line_width*256+2*margin,900),CV_8UC3);
-image_histogram=Scalar(255,255,255);
-int bottom=image_histogram.rows*19/20;
-
-if(image.channels()==1)
-{
-    for(int i=0;i<256;i++)
-    {
-
-        rectangle(image_histogram,Point(i*line_width+margin,bottom),Point((i+1)*line_width+margin,bottom-hist[0][i]),44,-1);
-    }
-}
-else
-{
-    for(int i=0;i<256;i++)
-    {
-        int value= hist[0][i]/4;
-        if(value>270)value=270;
-        rectangle(image_histogram,Point(i*line_width+margin,bottom/3),Point((i+1)*line_width+margin,bottom/3-value),Scalar(255,0,0),-1);
-    }
-    for(int i=0;i<256;i++)
-    {
-        int value= hist[1][i]/4;
-        if(value>270)value=270;
-        rectangle(image_histogram,Point(i*line_width+margin,bottom/3*2),Point((i+1)*line_width+margin,bottom/3*2-value),Scalar(0,255,0),-1);
-    }
-    for(int i=0;i<256;i++)
-    {
-        int value= hist[2][i]/4;
-        if(value>270)value=270;
-        rectangle(image_histogram,Point(i*line_width+margin,bottom),Point((i+1)*line_width+margin,bottom-value),Scalar(0,0,255),-1);
-    }
-}
-
-
-imshow("histogram",image_histogram);
-clean_hist();
-
-}
-
-void LeptonThread::clean_hist()
-{
-    save_hist();
-    for(int i =0;i<256;i++)
-    {
-        hist[0][i]=0;
-        hist[1][i]=0;
-        hist[2][i]=0;
-    }
-}
-
-void LeptonThread::get_hist(Mat image)
-{
-    if(image.channels()==1)
-    for(int i=0;i<image.rows;i++)
-    {
-        for(int j=0;j<image.cols;j++)
-        {
-            hist[0][image.at<Vec3b>(Point(i,j))[0]]++;
-        }
-    }
-    else
-    {
-        for(int i=0;i<image.rows;i++)
-        {
-            for(int j=0;j<image.cols;j++)
-            {
-                hist[0][image.at<Vec3b>(Point(i,j))[0]]++;
-                hist[1][image.at<Vec3b>(Point(i,j))[1]]++;
-                hist[2][image.at<Vec3b>(Point(i,j))[2]]++;
-            }
-        }
-
-    }
+     Mat grad_x;
+     Mat grad_y;
+     Scharr(input, grad_x, input.depth(), 1,0, 1, 0, BORDER_DEFAULT);
+     Scharr(input, grad_y, input.depth(), 0,1, 1, 0, BORDER_DEFAULT);
+     convertScaleAbs(grad_x,grad_x);
+     convertScaleAbs(grad_y,grad_y);
+     output=grad_x+grad_y;
 }
 
 void LeptonThread::separate_hand()
 {
     Mat temp=Mat::ones(opencvmat_base.size(),CV_8UC1);
+    cont=Mat::zeros(opencvmat.size(),CV_8UC1);
     opencvmat_base.copyTo(temp);
-    threshold(temp,temp,slider_value,255,THRESH_BINARY);
+    threshold(temp,temp,slider_value_binary,255,THRESH_BINARY);
 
     std::vector<std::vector<cv::Point> > contours;
-    findContours (temp,contours,CV_RETR_EXTERNAL,CV_CHAIN_APPROX_NONE);
-    cont =Mat::zeros(opencvmat.size(),CV_8UC3);
+    findContours (temp,contours,CV_RETR_EXTERNAL,CV_CHAIN_APPROX_SIMPLE);//CV_CHAIN_APPROX_SIMPLE , CV_CHAIN_APPROX_TC89_L1, CV_CHAIN_APPROX_TC89_KCOS,CV_CHAIN_APPROX_NONE
+    mask = Mat::zeros(opencvmat.size(),CV_8UC3);
 
     int index_biggest=0;
-
     for(int i =0;i<contours.size();i++)
     {
         if(contours[i].size()>contours[index_biggest].size())index_biggest=i;
     }
-    drawContours(cont,contours,index_biggest,Scalar(255,255,255),CV_FILLED);
-    cont = opencvmat& cont;
 
+    drawContours(mask,contours,index_biggest,Scalar(255,255,255),CV_FILLED);
+    cont = opencvmat& mask;
 
+    double hull_coverage;
+    double contour_ratio;
+    if(mode_hull) hull_coverage = draw_convex_hull(cont,contours,index_biggest);
+    if(histogram_on) histogram_alternative(cont);
+    if(counting_contours_on) contour_ratio=counting_contour(cont,mask);
+    if(recognize)recognize_gesture(hull_coverage,contour_ratio);
 
-/*
-    std::ostringstream ss;
-    ss<<cont.type();
-    putText(cont,ss.str(),Point(100,100),1,4,Scalar(255,255,255));
-*/
-    if(mode_hull)draw_convex_hull(cont,contours);
-    if(histogram_on)show_hist(cont);
-    Size new_size(240,180);
-    resize(cont,cont,new_size);
-    imshow("contours",cont);
 }
 
-void LeptonThread::draw_convex_hull(Mat image,std::vector<std::vector<Point> > conto)
+double LeptonThread::draw_convex_hull(Mat image, std::vector<std::vector<Point> > conto, int biggest)
 {
+    Mat temp;
+    image.copyTo(temp);
     std::vector<std::vector<Point> > hull(conto.size());
-    for(int i = 0;i <conto.size();i++)
-    {
-        convexHull(Mat(conto[i]),hull[i],false);
-    }
+
+    convexHull(Mat(conto[biggest]),hull[biggest],false);
     Scalar pink(255,0,255);
-    for(int i=0;i<conto.size();i++)
-    {
-        drawContours(cont,hull,i,pink,1,8,std::vector<Vec4i>(),0,Point());
-    }
+    drawContours(temp,hull,biggest,pink,1,8,std::vector<Vec4i>(),0,Point());
+
+    Mat temp_gray;
+    temp.copyTo(temp_gray);
+    Size new_size(320,240);
+    resize(temp,temp,new_size);
+    imshow("hull",temp);
+    image_hull =temp;
+
+    Mat field(temp_gray.size(),CV_8UC1);
+    Scalar white(255,255,255);
+    drawContours(field,hull,biggest,white,-1,8,std::vector<Vec4i>(),0,Point());
+    int field_under_hull =countNonZero(field);
+    cvtColor(temp_gray,temp_gray,CV_BGR2GRAY);
+    int field_hand =countNonZero(temp_gray);
+    double ratio = (double)field_hand/field_under_hull;
+
+    Vec4f vec_line;
+    if(draw_line) fitLine(conto[biggest] ,vec_line,CV_DIST_L2,0,0.01,0.01); //
+
+    int m =30;
+    line(temp_gray,Point(vec_line[2]-vec_line[0]*m,vec_line[3]-vec_line[1]*m),Point(vec_line[2] +vec_line[0]*m, vec_line[3]+vec_line[1]*m),255);
+
+
+    resize(temp_gray,temp_gray,new_size);
+    imshow("fdsf",temp_gray);
+
+    std::ostringstream ss;
+    ss<<hull[biggest].size() ;
+    putText(image_params,"Hull:"+ ss.str()+"/n" ,Point(5,30),1,2,0);
+    imshow("bal",image_params);
+    emit updateTextContours("Hull:"+ QString::number(hull[biggest].size())+"/n"
+                            + "Ratio h/f"+ QString::number(ratio,'f',2));
+    return ratio;
 }
-
-
-void LeptonThread::postprocessing()
-{
-    switch(ppmode)
-    {
-        case 0:
-        {
-
-        }
-        break;
-        case 1:
-        {
-            dilate(opencvmat,opencvmat,Mat());
-        }
-        break;
-        case 2:
-        {
-            erode(opencvmat,opencvmat,Mat());
-        }
-        break;
-        case 3:
-        {
-            erode(opencvmat,opencvmat,Mat());
-            dilate(opencvmat,opencvmat,Mat());
-
-        }
-        break;
-        case 4:
-        {
-            dilate(opencvmat,opencvmat,Mat());
-            erode(opencvmat,opencvmat,Mat());
-        }
-        break;
-        case 5:
-        {
-            finding_edges(opencvmat,opencvmat);
-
-        }
-        break;
-        case 6:
-        {
-        mr_skeleton(opencvmat,opencvmat);
-        }
-        break;
-        case 7:
-        {
-        medianBlur(opencvmat,opencvmat,3);
-        }
-        break;
-        default :
-        {
-        std::cout<<"Error"<<std::endl;
-        }
-        break;
-
-    }
-}
-
 
 void LeptonThread::save_hist()
 {
@@ -436,7 +287,146 @@ void LeptonThread::save_hist()
 
 }
 
+void LeptonThread::histogram_alternative(Mat image)
+{
+std::vector<Mat> bgr;
+split(image,bgr);
+int hist_size = 256;
+float range[] = {0,256};
+const float* histRange = {range};
 
+bool uniform =true; bool accumulate = false;
+
+Mat b_hist, g_hist, r_hist;
+
+calcHist(&bgr[0],1,0, Mat(),b_hist,1,&hist_size,&histRange,uniform,accumulate);
+calcHist(&bgr[1],1,0, Mat(),g_hist,1,&hist_size,&histRange,uniform,accumulate);
+calcHist(&bgr[2],1,0, Mat(),r_hist,1,&hist_size,&histRange,uniform,accumulate);
+
+int hist_w = 512; int hist_h = 300*3;
+int bin_w = cvRound ((double)hist_w/hist_size);
+
+Mat histImage(hist_h,hist_w,CV_8UC3, Scalar(255,255,255));
+int bottom = hist_h/10*9;
+
+for(int i =1;i <hist_size;i++)
+{
+    rectangle(histImage,Point(bin_w*i, bottom/3),Point(bin_w*(i+1) ,bottom/3-cvRound(b_hist.at<float>(i))), Scalar(255,0,0),-1);
+    rectangle(histImage,Point(bin_w*i, bottom*2/3),Point(bin_w*(i+1) ,bottom*2/3-cvRound(g_hist.at<float>(i))), Scalar(0,255,0),-1);
+    rectangle(histImage,Point(bin_w*i, bottom),Point(bin_w*(i+1) ,bottom-cvRound(r_hist.at<float>(i))), Scalar(0,0,255),-1);
+}
+imshow("CalcHist",histImage);
+histImage.copyTo(image_histogram);
+}
+
+double LeptonThread::counting_contour(Mat image, Mat mask)
+{
+    Mat temp;
+    image.copyTo(temp);
+    Mat temp_mask;
+    mask.copyTo(temp_mask);
+    cvtColor(temp_mask,temp_mask,CV_BGR2GRAY);
+    cvtColor(temp,temp,CV_BGR2GRAY);
+    Canny(temp,temp,slider_value_canny,slider_value_canny*3/2,3);
+    imshow("hej",temp);
+
+    int number_of_pixels_countour = countNonZero(temp);
+    int number_of_pixels_hand = countNonZero(temp_mask);
+    double ratio = (double)number_of_pixels_hand/number_of_pixels_countour;
+    emit updateText("countur:"+ QString::number(number_of_pixels_countour)+ "\n"
+                    +"Field:"+QString::number(number_of_pixels_hand)+"\n"
+                    +"Radio:"+QString::number(ratio,'f',2));
+
+    Canny(temp,temp,slider_value_canny,slider_value_canny*3/2,3);
+    std::vector<std::vector<cv::Point> > contours;
+    findContours (temp,contours,CV_RETR_LIST,CV_CHAIN_APPROX_SIMPLE);//CV_CHAIN_APPROX_SIMPLE , CV_CHAIN_APPROX_TC89_L1, CV_CHAIN_APPROX_TC89_KCOS,CV_CHAIN_APPROX_NONE
+    int all_contours=0;
+    for(int i = 0; i<contours.size();i++ )
+    {
+        all_contours+=contours[i].size();
+    }
+
+    emit updateTextContoursHull("All cont:" + QString::number(all_contours));
+    return ratio;
+}
+
+void LeptonThread::postprocessing(Mat image)
+{
+    if(mode)
+    {
+        Mat temp;
+        opencvmat_base.copyTo(temp);
+        threshold(temp,temp,slider_value_binary,255,THRESH_BINARY);
+        cvtColor(temp,temp,CV_GRAY2BGR);
+        temp.copyTo(image);
+    }
+
+    switch(ppmode)
+    {
+        case 0:
+        {
+
+        }
+        break;
+        case 1:
+        {
+            dilate(image,image,Mat());
+        }
+        break;
+        case 2:
+        {
+            erode(image,image,Mat());
+        }
+        break;
+        case 3:
+        {
+            erode(image,image,Mat());
+            dilate(image,image,Mat());
+
+        }
+        break;
+        case 4:
+        {
+            dilate(image,image,Mat());
+            erode(image,image,Mat());
+        }
+        break;
+        case 5:
+        {
+            finding_edges(image,image);
+        }
+        break;
+        case 6:
+        {
+        mr_skeleton(image,image);
+        }
+        break;
+        case 7:
+        {
+        medianBlur(image,image,3);
+        }
+        break;
+        default :
+        {
+        std::cout<<"Error"<<std::endl;
+        }
+        break;
+
+    }
+}
+
+void LeptonThread::recognize_gesture(double hull,double conts)
+{
+    if(hull<0.90)
+    {
+        emit updateTextReco("Scizors");
+    }
+    else
+    {
+        emit updateTextReco("Stone or paper");
+    }
+
+}
 //////////////////////////
 bool LeptonThread::return_mode()
 {
@@ -477,9 +467,13 @@ void LeptonThread::set_normal_mode()
     ppmode=0;
     mediane_on=false;
 }
-void LeptonThread::change_slider_value(int value)
+void LeptonThread::change_slider_value_binary(int value)
 {
-    slider_value=value;
+    slider_value_binary=value;
+}
+void LeptonThread::change_slider_value_canny(int value)
+{
+    slider_value_canny=value;
 }
 void LeptonThread::switchon_dilatation()
 {
@@ -509,13 +503,9 @@ void LeptonThread::switchon_mediane()
 {
     ppmode=7;
 }
-void LeptonThread::switchon_learn()
+void LeptonThread::switchon_conting_countour()
 {
-    learn=true;
-}
-void LeptonThread::switchoff_learn()
-{
-    learn=false;
+    counting_contours_on = !counting_contours_on;
 }
 void LeptonThread::switchon_histogram()
 {
@@ -525,9 +515,14 @@ void LeptonThread::switchon_hull()
 {
     mode_hull=!mode_hull;
 }
-	
-	
-	
+void LeptonThread::switchon_line()
+{
+    draw_line=!draw_line;
+}
+void LeptonThread::switchon_recognize()
+{
+    recognize=!recognize;
+}
 	
 	
 	

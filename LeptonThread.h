@@ -47,7 +47,8 @@ public slots:
   void change_colormap_iron();
   void set_normal_mode();
   void set_binary_mode();
-  void change_slider_value(int value);
+  void change_slider_value_binary(int value);
+  void change_slider_value_canny(int value);
 
   void switchon_dilatation();
   void switchon_erosion();
@@ -55,53 +56,64 @@ public slots:
   void switchon_close();
   void switchon_sobel();
   void switchon_skeleton();
-  void switchon_learn();
-  void switchoff_learn();
   void switchon_mediane();
   void switchon_histogram();
   void switchon_hull();
+  void switchon_conting_countour();
+  void switchon_line();
+  void switchon_recognize();
 
-  void draw_convex_hull(Mat image,std::vector<std::vector<Point> > conto);
+  double draw_convex_hull(Mat image,std::vector<std::vector<Point> > conto,int biggest);
   void make_snapshot();
-  void find_countour();
+  void histogram_alternative(Mat image);
+  double counting_contour(Mat image,Mat mask);
   void separate_hand();//make mask from the biggest contour and use it with orginal image
 
 signals:
 
   void updateText(QString);
+  void updateTextContours(QString);
+  void updateTextContoursHull(QString);
+  void updateTextReco(QString);
   void updateImage(QImage);
 
 private:
 
-   Mat opencvmat_base;//value 0-255 1 channel
+   Mat opencvmat_base;//values 0-255 1 channel
    Mat opencvmat;
-   int hist[3][256];
-   Mat image_histogram;
-   int mode_hull;
    Mat cont;
+   Mat mask;
+   Mat image_hull;
+   Mat image_histogram;
+   Mat image_params;
+
+   int hist[3][256];
+
+   bool mode;//0-normal , 1- binary
+   bool mode_hull;
+   bool mediane_on;
+   bool histogram_on;
+   bool counting_contours_on;
+   bool draw_line;
+   bool recognize;
+   int ppmode;
+
    int width;
    int height;
    const int *colormap;
-   int mode;//0-normal , 1- binary
-   int slider_value;
-   int ppmode;
-   bool learn;
-   bool mediane_on;
-   bool histogram_on;
+
+   int slider_value_binary;
+   int slider_value_canny;
 
 
-
+   void recognize_gesture(double hull, double conts);
+   void postprocessing(Mat image);
+   void mr_skeleton(Mat input, Mat &output);
+   void finding_edges(Mat input, Mat &output);
+   void save_hist();
   
-  void postprocessing();
-  void mr_skeleton(Mat input, Mat &output);
-  void finding_edges(Mat input, Mat &output);
-  void show_hist(Mat image);
-  void get_hist(Mat image);
-  void clean_hist();
-  void save_hist();
-  
-  uint8_t result[PACKET_SIZE*PACKETS_PER_FRAME];
-  uint16_t *frameBuffer;
+   uint8_t result[PACKET_SIZE*PACKETS_PER_FRAME];
+   uint16_t *frameBuffer;
 
 };
 

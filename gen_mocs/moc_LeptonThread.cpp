@@ -22,62 +22,73 @@ static const uint qt_meta_data_LeptonThread[] = {
        6,       // revision
        0,       // classname
        0,    0, // classinfo
-      26,   14, // methods
+      32,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
        0,       // flags
-       2,       // signalCount
+       5,       // signalCount
 
  // signals: signature, parameters, type, tag, flags
       13,   33,   33,   33, 0x05,
       34,   33,   33,   33, 0x05,
+      62,   33,   33,   33, 0x05,
+      94,   33,   33,   33, 0x05,
+     118,   33,   33,   33, 0x05,
 
  // slots: signature, parameters, type, tag, flags
-      54,   33,   33,   33, 0x0a,
-      67,   33,   33,   33, 0x0a,
-      79,   33,   33,   33, 0x0a,
-      92,   33,   33,   33, 0x0a,
-     118,   33,   33,   33, 0x0a,
-     141,   33,   33,   33, 0x0a,
-     164,   33,   33,   33, 0x0a,
-     182,   33,   33,   33, 0x0a,
-     200,  225,   33,   33, 0x0a,
-     231,   33,   33,   33, 0x0a,
-     253,   33,   33,   33, 0x0a,
-     272,   33,   33,   33, 0x0a,
-     288,   33,   33,   33, 0x0a,
-     305,   33,   33,   33, 0x0a,
-     322,   33,   33,   33, 0x0a,
-     342,   33,   33,   33, 0x0a,
-     359,   33,   33,   33, 0x0a,
-     377,   33,   33,   33, 0x0a,
-     396,   33,   33,   33, 0x0a,
-     417,   33,   33,   33, 0x0a,
-     433,  488,   33,   33, 0x0a,
-     500,   33,   33,   33, 0x0a,
-     516,   33,   33,   33, 0x0a,
-     532,   33,   33,   33, 0x0a,
+     138,   33,   33,   33, 0x0a,
+     151,   33,   33,   33, 0x0a,
+     163,   33,   33,   33, 0x0a,
+     176,   33,   33,   33, 0x0a,
+     202,   33,   33,   33, 0x0a,
+     225,   33,   33,   33, 0x0a,
+     248,   33,   33,   33, 0x0a,
+     266,   33,   33,   33, 0x0a,
+     284,  316,   33,   33, 0x0a,
+     322,  316,   33,   33, 0x0a,
+     353,   33,   33,   33, 0x0a,
+     375,   33,   33,   33, 0x0a,
+     394,   33,   33,   33, 0x0a,
+     410,   33,   33,   33, 0x0a,
+     427,   33,   33,   33, 0x0a,
+     444,   33,   33,   33, 0x0a,
+     464,   33,   33,   33, 0x0a,
+     483,   33,   33,   33, 0x0a,
+     504,   33,   33,   33, 0x0a,
+     520,   33,   33,   33, 0x0a,
+     548,   33,   33,   33, 0x0a,
+     564,   33,   33,   33, 0x0a,
+     585,  644,  664,   33, 0x0a,
+     671,   33,   33,   33, 0x0a,
+     687,  714,   33,   33, 0x0a,
+     720,  746,  664,   33, 0x0a,
+     757,   33,   33,   33, 0x0a,
 
        0        // eod
 };
 
 static const char qt_meta_stringdata_LeptonThread[] = {
     "LeptonThread\0updateText(QString)\0\0"
-    "updateImage(QImage)\0performFFC()\0"
-    "enableAGC()\0disableAGC()\0"
+    "updateTextContours(QString)\0"
+    "updateTextContoursHull(QString)\0"
+    "updateTextReco(QString)\0updateImage(QImage)\0"
+    "performFFC()\0enableAGC()\0disableAGC()\0"
     "change_colormap_rainbow()\0"
     "change_colormap_gray()\0change_colormap_iron()\0"
     "set_normal_mode()\0set_binary_mode()\0"
-    "change_slider_value(int)\0value\0"
+    "change_slider_value_binary(int)\0value\0"
+    "change_slider_value_canny(int)\0"
     "switchon_dilatation()\0switchon_erosion()\0"
     "switchon_open()\0switchon_close()\0"
     "switchon_sobel()\0switchon_skeleton()\0"
-    "switchon_learn()\0switchoff_learn()\0"
     "switchon_mediane()\0switchon_histogram()\0"
-    "switchon_hull()\0"
-    "draw_convex_hull(Mat,std::vector<std::vector<Point> >)\0"
-    "image,conto\0make_snapshot()\0find_countour()\0"
+    "switchon_hull()\0switchon_conting_countour()\0"
+    "switchon_line()\0switchon_recognize()\0"
+    "draw_convex_hull(Mat,std::vector<std::vector<Point> >,int)\0"
+    "image,conto,biggest\0double\0make_snapshot()\0"
+    "histogram_alternative(Mat)\0image\0"
+    "counting_contour(Mat,Mat)\0image,mask\0"
     "separate_hand()\0"
 };
 
@@ -88,31 +99,39 @@ void LeptonThread::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id
         LeptonThread *_t = static_cast<LeptonThread *>(_o);
         switch (_id) {
         case 0: _t->updateText((*reinterpret_cast< QString(*)>(_a[1]))); break;
-        case 1: _t->updateImage((*reinterpret_cast< QImage(*)>(_a[1]))); break;
-        case 2: _t->performFFC(); break;
-        case 3: _t->enableAGC(); break;
-        case 4: _t->disableAGC(); break;
-        case 5: _t->change_colormap_rainbow(); break;
-        case 6: _t->change_colormap_gray(); break;
-        case 7: _t->change_colormap_iron(); break;
-        case 8: _t->set_normal_mode(); break;
-        case 9: _t->set_binary_mode(); break;
-        case 10: _t->change_slider_value((*reinterpret_cast< int(*)>(_a[1]))); break;
-        case 11: _t->switchon_dilatation(); break;
-        case 12: _t->switchon_erosion(); break;
-        case 13: _t->switchon_open(); break;
-        case 14: _t->switchon_close(); break;
-        case 15: _t->switchon_sobel(); break;
-        case 16: _t->switchon_skeleton(); break;
-        case 17: _t->switchon_learn(); break;
-        case 18: _t->switchoff_learn(); break;
-        case 19: _t->switchon_mediane(); break;
-        case 20: _t->switchon_histogram(); break;
-        case 21: _t->switchon_hull(); break;
-        case 22: _t->draw_convex_hull((*reinterpret_cast< Mat(*)>(_a[1])),(*reinterpret_cast< std::vector<std::vector<Point> >(*)>(_a[2]))); break;
-        case 23: _t->make_snapshot(); break;
-        case 24: _t->find_countour(); break;
-        case 25: _t->separate_hand(); break;
+        case 1: _t->updateTextContours((*reinterpret_cast< QString(*)>(_a[1]))); break;
+        case 2: _t->updateTextContoursHull((*reinterpret_cast< QString(*)>(_a[1]))); break;
+        case 3: _t->updateTextReco((*reinterpret_cast< QString(*)>(_a[1]))); break;
+        case 4: _t->updateImage((*reinterpret_cast< QImage(*)>(_a[1]))); break;
+        case 5: _t->performFFC(); break;
+        case 6: _t->enableAGC(); break;
+        case 7: _t->disableAGC(); break;
+        case 8: _t->change_colormap_rainbow(); break;
+        case 9: _t->change_colormap_gray(); break;
+        case 10: _t->change_colormap_iron(); break;
+        case 11: _t->set_normal_mode(); break;
+        case 12: _t->set_binary_mode(); break;
+        case 13: _t->change_slider_value_binary((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 14: _t->change_slider_value_canny((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 15: _t->switchon_dilatation(); break;
+        case 16: _t->switchon_erosion(); break;
+        case 17: _t->switchon_open(); break;
+        case 18: _t->switchon_close(); break;
+        case 19: _t->switchon_sobel(); break;
+        case 20: _t->switchon_skeleton(); break;
+        case 21: _t->switchon_mediane(); break;
+        case 22: _t->switchon_histogram(); break;
+        case 23: _t->switchon_hull(); break;
+        case 24: _t->switchon_conting_countour(); break;
+        case 25: _t->switchon_line(); break;
+        case 26: _t->switchon_recognize(); break;
+        case 27: { double _r = _t->draw_convex_hull((*reinterpret_cast< Mat(*)>(_a[1])),(*reinterpret_cast< std::vector<std::vector<Point> >(*)>(_a[2])),(*reinterpret_cast< int(*)>(_a[3])));
+            if (_a[0]) *reinterpret_cast< double*>(_a[0]) = _r; }  break;
+        case 28: _t->make_snapshot(); break;
+        case 29: _t->histogram_alternative((*reinterpret_cast< Mat(*)>(_a[1]))); break;
+        case 30: { double _r = _t->counting_contour((*reinterpret_cast< Mat(*)>(_a[1])),(*reinterpret_cast< Mat(*)>(_a[2])));
+            if (_a[0]) *reinterpret_cast< double*>(_a[0]) = _r; }  break;
+        case 31: _t->separate_hand(); break;
         default: ;
         }
     }
@@ -150,9 +169,9 @@ int LeptonThread::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 26)
+        if (_id < 32)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 26;
+        _id -= 32;
     }
     return _id;
 }
@@ -165,9 +184,30 @@ void LeptonThread::updateText(QString _t1)
 }
 
 // SIGNAL 1
-void LeptonThread::updateImage(QImage _t1)
+void LeptonThread::updateTextContours(QString _t1)
 {
     void *_a[] = { 0, const_cast<void*>(reinterpret_cast<const void*>(&_t1)) };
     QMetaObject::activate(this, &staticMetaObject, 1, _a);
+}
+
+// SIGNAL 2
+void LeptonThread::updateTextContoursHull(QString _t1)
+{
+    void *_a[] = { 0, const_cast<void*>(reinterpret_cast<const void*>(&_t1)) };
+    QMetaObject::activate(this, &staticMetaObject, 2, _a);
+}
+
+// SIGNAL 3
+void LeptonThread::updateTextReco(QString _t1)
+{
+    void *_a[] = { 0, const_cast<void*>(reinterpret_cast<const void*>(&_t1)) };
+    QMetaObject::activate(this, &staticMetaObject, 3, _a);
+}
+
+// SIGNAL 4
+void LeptonThread::updateImage(QImage _t1)
+{
+    void *_a[] = { 0, const_cast<void*>(reinterpret_cast<const void*>(&_t1)) };
+    QMetaObject::activate(this, &staticMetaObject, 4, _a);
 }
 QT_END_MOC_NAMESPACE
