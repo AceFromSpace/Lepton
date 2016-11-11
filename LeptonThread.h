@@ -63,6 +63,8 @@ public slots:
   void switchon_line();
   void switchon_recognize();
   void switchon_rescale();
+  void get_BG();
+  void sub_BG();
 
   double draw_convex_hull(Mat image,std::vector<std::vector<Point> > conto,int biggest);
   void make_snapshot();
@@ -88,8 +90,12 @@ private:
    Mat image_hull;
    Mat image_histogram;
    Mat image_params;
+   Mat Canny_conts;
    Mat opencvmat_values;
+   Mat background;
    int hist[3][256];
+   int hottest_point;
+   int coolest_point;
 
    bool mode;//0-normal , 1- binary
    bool mode_hull;
@@ -108,13 +114,14 @@ private:
    int slider_value_binary;
    int slider_value_canny;
 
-   void cut_wirst(Mat img_hand);
+   Mat cut_wirst(Mat img_hand, std::vector<std::vector<Point> > conto, int biggest);
    void recognize_gesture(double hull, double conts);
    void postprocessing(Mat image);
    void mr_skeleton(Mat input, Mat &output);
    void finding_edges(Mat input, Mat &output);
    void save_hist();
-  
+
+
    uint8_t result[PACKET_SIZE*PACKETS_PER_FRAME];
    uint16_t *frameBuffer;
 

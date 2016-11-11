@@ -61,8 +61,7 @@ int main( int argc, char **argv )
 }
 void create_buttons(QWidget *mywig, QThread *thr)
 {
-    QPushButton *button_FFC = new QPushButton("Perform FFC", mywig);
-    button_FFC->setGeometry(130, 290-35, 100, 30);
+
     QPushButton *button_rainbow = new QPushButton("Rainbow Scale", mywig);
     button_rainbow->setGeometry(10, 290-35, 100, 30);
     QPushButton *button_grayscale = new QPushButton("Gray Scale", mywig);
@@ -70,7 +69,8 @@ void create_buttons(QWidget *mywig, QThread *thr)
     QPushButton *button_iron = new QPushButton("Iron Scale", mywig);
     button_iron ->setGeometry(10, 320, 100, 30);
 
-
+    QPushButton *button_FFC = new QPushButton("Perform FFC", mywig);
+    button_FFC->setGeometry(130, 290-35, 100, 30);
     QPushButton *button_binarization = new QPushButton("Binarization", mywig);
     button_binarization ->setGeometry(130, 290, 100, 30);
     QPushButton *button_normal = new QPushButton("Normal Diplay", mywig);
@@ -92,7 +92,11 @@ void create_buttons(QWidget *mywig, QThread *thr)
 
 
     QPushButton *button_mediane = new QPushButton("Mediane",mywig);
-    button_mediane -> setGeometry(520,320,100,30);
+    button_mediane -> setGeometry(520,255,100,30);
+    QPushButton *button_get_BG = new QPushButton("Get BG",mywig);
+    button_get_BG -> setGeometry(520,290,100,30);
+    QPushButton *button_sub_BG = new QPushButton("Sub_BG",mywig);
+    button_sub_BG -> setGeometry(520,320,100,30);
 
     QPushButton *button_agc_en = new QPushButton("AGC ON",mywig);
     button_agc_en-> setGeometry(650,255,100,30);
@@ -117,6 +121,8 @@ void create_buttons(QWidget *mywig, QThread *thr)
     QObject::connect(button_sobel, SIGNAL(clicked()),thr,SLOT(switchon_sobel()));
     QObject::connect(button_skeleton, SIGNAL(clicked()),thr,SLOT(switchon_skeleton()));
     QObject::connect(button_mediane, SIGNAL(clicked()),thr,SLOT(switchon_mediane()));
+    QObject::connect(button_get_BG, SIGNAL(clicked()),thr,SLOT(get_BG()));
+    QObject::connect(button_sub_BG, SIGNAL(clicked()),thr,SLOT(sub_BG()));
     QObject::connect(button_agc_en, SIGNAL(clicked()),thr,SLOT(enableAGC()));
     QObject::connect(button_agc_dis, SIGNAL(clicked()),thr,SLOT(disableAGC()));
     QObject::connect(button_snap_shot, SIGNAL(clicked()),thr,SLOT(make_snapshot()));
