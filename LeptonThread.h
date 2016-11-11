@@ -63,8 +63,9 @@ public slots:
   void switchon_line();
   void switchon_recognize();
   void switchon_rescale();
+  void switchon_subbg();
   void get_BG();
-  void sub_BG();
+
 
   double draw_convex_hull(Mat image,std::vector<std::vector<Point> > conto,int biggest);
   void make_snapshot();
@@ -103,6 +104,7 @@ private:
    bool histogram_on;
    bool counting_contours_on;
    bool draw_line;
+   bool sub_background;
    bool recognize;
    bool rescale;
    int ppmode;
@@ -115,11 +117,14 @@ private:
    int slider_value_canny;
 
    Mat cut_wirst(Mat img_hand, std::vector<std::vector<Point> > conto, int biggest);
+
    void recognize_gesture(double hull, double conts);
    void postprocessing(Mat image);
    void mr_skeleton(Mat input, Mat &output);
    void finding_edges(Mat input, Mat &output);
    void save_hist();
+   Mat correct_mask(Mat mask_to_correct);
+   Mat sub_BG();
 
 
    uint8_t result[PACKET_SIZE*PACKETS_PER_FRAME];

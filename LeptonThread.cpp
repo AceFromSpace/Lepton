@@ -25,6 +25,7 @@ LeptonThread::LeptonThread() : QThread()
     draw_line =false;
     recognize =false;
     rescale =false;
+    sub_background=false;
     colormap = colormap_rainbow;
     ppmode=0;
     slider_value_binary=150;
@@ -36,6 +37,8 @@ LeptonThread::LeptonThread() : QThread()
     cont=Mat::zeros(opencvmat.size(),CV_8UC1);
     mask=Mat::zeros(opencvmat.size(),CV_8UC1);
     image_hull=Mat::zeros(opencvmat.size(),CV_8UC1);
+    opencvmat_values=Mat::zeros(Size(width,height),CV_16UC1);
+    background=Mat::zeros(Size(width,height),CV_16UC1);
     hottest_point=0;
     coolest_point=65535;
 }
@@ -108,7 +111,7 @@ void LeptonThread::run()
 
         opencvmat=Mat::zeros(Size(width,height),CV_8UC3);
         opencvmat_base=Mat::zeros(Size(width,height),CV_8UC1);
-        opencvmat_values=Mat::zeros(Size(width,height),CV_16UC1);
+
 
 			float diff = maxValue - minValue;
 			float scale = 255/diff;
@@ -155,13 +158,13 @@ void LeptonThread::make_snapshot()
 
    // imshow(ss.str(),opencvmat);
 
-   imwrite(ss.str()+"t"+".jpg",opencvmat);
+  // imwrite(ss.str()+"t"+".jpg",opencvmat);
    // imwrite(ss.str()+"m" +".jpg",mask);
     imwrite(ss.str()+".jpg",cont);
    // imwrite(ss.str()+"hu"+".jpg",image_hull);
    //  imwrite(ss.str()+"d"+".jpg",image_params);
     imwrite(ss.str()+"h"+".jpg",image_histogram);
-    imwrite(ss.str() +"c"+".jpg",Canny_conts);
+   // imwrite(ss.str() +"c"+".jpg",Canny_conts);
 
 }
 
@@ -211,17 +214,25 @@ void LeptonThread::separate_hand()
     std::vector<std::vector<cv::Point> > contours;
     findContours (temp,contours,CV_RETR_EXTERNAL,CV_CHAIN_APPROX_SIMPLE);//CV_CHAIN_APPROX_SIMPLE , CV_CHAIN_APPROX_TC89_L1, CV_CHAIN_APPROX_TC89_KCOS,CV_CHAIN_APPROX_NONE
     mask = Mat::zeros(opencvmat.size(),CV_8UC3);
-
     int index_biggest=0;
-    for(uint i =0;i<contours.size();i++)
+    if(!sub_background)
     {
-        if(contours[i].size()>contours[index_biggest].size())index_biggest=i;
+
+        for(uint i =0;i<contours.size();i++)
+        {
+            if(contours[i].size()>contours[index_biggest].size())index_biggest=i;
+        }
+
+        drawContours(mask,contours,index_biggest,Scalar(255,255,255),CV_FILLED);
     }
+    else
+    {
+        mask = sub_BG();
 
-    drawContours(mask,contours,index_biggest,Scalar(255,255,255),CV_FILLED);
-
+    }
     double hull_coverage;
     double contour_ratio;
+    mask = correct_mask(mask);
     cont = mask& opencvmat;
     if (draw_line)cont= cut_wirst(cont,contours,index_biggest);//changes mask also
     if(rescale)cont= rescale_hand(mask);
@@ -234,7 +245,6 @@ void LeptonThread::separate_hand()
     Size new_size(400,300);
     resize(cont,cont,new_size);
     imshow("contour",cont);
-    histogram_alternative(opencvmat);
 }
 
 double LeptonThread::draw_convex_hull(Mat image, std::vector<std::vector<cv::Point> > conto, int biggest)
@@ -591,27 +601,43 @@ int margin=6;
 
 void LeptonThread::get_BG()
 {
-    background = opencvmat_values;
+    opencvmat_values.copyTo(background);
 }
 
-void LeptonThread::sub_BG()
+Mat LeptonThread::sub_BG()
 {
-    Mat temp;
-    subtract(opencvmat_values , background,temp);
-    Mat output(temp.size(),CV_8UC1);
+    Mat temp=Mat::zeros(Size(width,height),CV_16UC1);
+    temp= abs(opencvmat_values- background);
+    Mat output=Mat::zeros(temp.size(),CV_8UC3);
     for(int i=0;i<temp.cols;i++)
     {
      for(int j=0;j<temp.rows;j++)
         {
         int pixel_val = temp.at<short>(Point(i,j));
-         if(pixel_val>200)
-             output.at<uchar>(Point(i,j))=255;
-
+         if(pixel_val>50)
+         {
+            output.at<Vec3b>(Point(i,j))[0]=255;
+            output.at<Vec3b>(Point(i,j))[1]=255;
+            output.at<Vec3b>(Point(i,j))[2]=255;
+         }
         }
     }
+
     imshow("sub",output);
+    return output;
 }
 
+Mat LeptonThread::correct_mask(Mat mask_to_correct)
+{
+    Mat temp;
+    mask_to_correct.copyTo(temp);
+    cvtColor(temp,temp,CV_BGR2GRAY);
+    temp= temp & opencvmat_base;
+    threshold(temp,temp,slider_value_binary,255,THRESH_BINARY);
+    cvtColor(temp,temp,CV_GRAY2BGR);
+    imshow("temp",temp);
+    return temp;
+}
 //////////////////////////
 bool LeptonThread::return_mode()
 {
@@ -714,7 +740,10 @@ void LeptonThread::switchon_rescale()
     hottest_point=0;
     coolest_point=65535;
 }
-	
+void LeptonThread::switchon_subbg()
+{
+   sub_background=!sub_background;
+}
 	
 	
 	

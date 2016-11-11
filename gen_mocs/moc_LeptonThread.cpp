@@ -61,13 +61,13 @@ static const uint qt_meta_data_LeptonThread[] = {
      564,   33,   33,   33, 0x0a,
      585,   33,   33,   33, 0x0a,
      604,   33,   33,   33, 0x0a,
-     613,   33,   33,   33, 0x0a,
-     622,  681,  701,   33, 0x0a,
-     708,   33,   33,   33, 0x0a,
-     724,  751,   33,   33, 0x0a,
-     757,  783,  701,   33, 0x0a,
-     794,   33,   33,   33, 0x0a,
-     810,  828,  839,   33, 0x0a,
+     621,   33,   33,   33, 0x0a,
+     630,  689,  709,   33, 0x0a,
+     716,   33,   33,   33, 0x0a,
+     732,  759,   33,   33, 0x0a,
+     765,  791,  709,   33, 0x0a,
+     802,   33,   33,   33, 0x0a,
+     818,  836,  847,   33, 0x0a,
 
        0        // eod
 };
@@ -89,7 +89,8 @@ static const char qt_meta_stringdata_LeptonThread[] = {
     "switchon_mediane()\0switchon_histogram()\0"
     "switchon_hull()\0switchon_conting_countour()\0"
     "switchon_line()\0switchon_recognize()\0"
-    "switchon_rescale()\0get_BG()\0sub_BG()\0"
+    "switchon_rescale()\0switchon_subbg()\0"
+    "get_BG()\0"
     "draw_convex_hull(Mat,std::vector<std::vector<Point> >,int)\0"
     "image,conto,biggest\0double\0make_snapshot()\0"
     "histogram_alternative(Mat)\0image\0"
@@ -132,8 +133,8 @@ void LeptonThread::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id
         case 25: _t->switchon_line(); break;
         case 26: _t->switchon_recognize(); break;
         case 27: _t->switchon_rescale(); break;
-        case 28: _t->get_BG(); break;
-        case 29: _t->sub_BG(); break;
+        case 28: _t->switchon_subbg(); break;
+        case 29: _t->get_BG(); break;
         case 30: { double _r = _t->draw_convex_hull((*reinterpret_cast< Mat(*)>(_a[1])),(*reinterpret_cast< std::vector<std::vector<Point> >(*)>(_a[2])),(*reinterpret_cast< int(*)>(_a[3])));
             if (_a[0]) *reinterpret_cast< double*>(_a[0]) = _r; }  break;
         case 31: _t->make_snapshot(); break;

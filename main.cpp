@@ -122,7 +122,6 @@ void create_buttons(QWidget *mywig, QThread *thr)
     QObject::connect(button_skeleton, SIGNAL(clicked()),thr,SLOT(switchon_skeleton()));
     QObject::connect(button_mediane, SIGNAL(clicked()),thr,SLOT(switchon_mediane()));
     QObject::connect(button_get_BG, SIGNAL(clicked()),thr,SLOT(get_BG()));
-    QObject::connect(button_sub_BG, SIGNAL(clicked()),thr,SLOT(sub_BG()));
     QObject::connect(button_agc_en, SIGNAL(clicked()),thr,SLOT(enableAGC()));
     QObject::connect(button_agc_dis, SIGNAL(clicked()),thr,SLOT(disableAGC()));
     QObject::connect(button_snap_shot, SIGNAL(clicked()),thr,SLOT(make_snapshot()));
@@ -154,19 +153,22 @@ void create_sliders(QWidget *mywig,QThread *thr)
 
 void create_checkboxes(QWidget *mywig,QThread *thr)
 {
+    QCheckBox *checkbox_subbg = new QCheckBox("Sub bg",mywig);
+    checkbox_subbg ->setGeometry(650,90,100,20);
     QCheckBox *checkbox_reco = new QCheckBox("Recognize",mywig);
-    checkbox_reco ->setGeometry(650,70,100,30);
+    checkbox_reco ->setGeometry(650,110,100,20);
     QCheckBox *checkbox_line = new QCheckBox("cut wirst",mywig);
-    checkbox_line ->setGeometry(650,100,100,30);
+    checkbox_line ->setGeometry(650,130,100,20);
     QCheckBox *checkbox_hist = new QCheckBox("histogram",mywig);
-    checkbox_hist ->setGeometry(650,130,100,30);
+    checkbox_hist ->setGeometry(650,150,100,20);
     QCheckBox *checkbox_hull = new QCheckBox("hull",mywig);
-    checkbox_hull ->setGeometry(650,160,100,30);
+    checkbox_hull ->setGeometry(650,170,100,20);
     QCheckBox *checkbox_count_contour = new QCheckBox("contour",mywig);
-    checkbox_count_contour ->setGeometry(650,190,100,30);
+    checkbox_count_contour ->setGeometry(650,190,100,20);
     QCheckBox *checkbox_rescale = new QCheckBox("rescale",mywig);
-    checkbox_rescale ->setGeometry(650,210,100,30);
+    checkbox_rescale ->setGeometry(650,210,100,20);
 
+    QObject::connect(checkbox_subbg, SIGNAL(toggled(bool)),thr,SLOT(switchon_subbg()));
     QObject::connect(checkbox_reco, SIGNAL(toggled(bool)),thr,SLOT(switchon_recognize()));
     QObject::connect(checkbox_line, SIGNAL(toggled(bool)),thr,SLOT(switchon_line()));
     QObject::connect(checkbox_hist, SIGNAL(toggled(bool)),thr,SLOT(switchon_histogram()));
