@@ -22,7 +22,7 @@ static const uint qt_meta_data_LeptonThread[] = {
        6,       // revision
        0,       // classname
        0,    0, // classinfo
-      36,   14, // methods
+      38,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -62,12 +62,14 @@ static const uint qt_meta_data_LeptonThread[] = {
      585,   33,   33,   33, 0x0a,
      604,   33,   33,   33, 0x0a,
      621,   33,   33,   33, 0x0a,
-     630,  689,  709,   33, 0x0a,
-     716,   33,   33,   33, 0x0a,
-     732,  759,   33,   33, 0x0a,
-     765,  791,  709,   33, 0x0a,
-     802,   33,   33,   33, 0x0a,
-     818,  836,  847,   33, 0x0a,
+     640,   33,   33,   33, 0x0a,
+     661,   33,   33,   33, 0x0a,
+     670,  729,  749,   33, 0x0a,
+     756,   33,   33,   33, 0x0a,
+     772,  799,   33,   33, 0x0a,
+     805,  831,  749,   33, 0x0a,
+     842,   33,   33,   33, 0x0a,
+     858,  876,  887,   33, 0x0a,
 
        0        // eod
 };
@@ -90,6 +92,7 @@ static const char qt_meta_stringdata_LeptonThread[] = {
     "switchon_hull()\0switchon_conting_countour()\0"
     "switchon_line()\0switchon_recognize()\0"
     "switchon_rescale()\0switchon_subbg()\0"
+    "switchon_concave()\0switchon_save_prev()\0"
     "get_BG()\0"
     "draw_convex_hull(Mat,std::vector<std::vector<Point> >,int)\0"
     "image,conto,biggest\0double\0make_snapshot()\0"
@@ -134,15 +137,17 @@ void LeptonThread::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id
         case 26: _t->switchon_recognize(); break;
         case 27: _t->switchon_rescale(); break;
         case 28: _t->switchon_subbg(); break;
-        case 29: _t->get_BG(); break;
-        case 30: { double _r = _t->draw_convex_hull((*reinterpret_cast< Mat(*)>(_a[1])),(*reinterpret_cast< std::vector<std::vector<Point> >(*)>(_a[2])),(*reinterpret_cast< int(*)>(_a[3])));
+        case 29: _t->switchon_concave(); break;
+        case 30: _t->switchon_save_prev(); break;
+        case 31: _t->get_BG(); break;
+        case 32: { double _r = _t->draw_convex_hull((*reinterpret_cast< Mat(*)>(_a[1])),(*reinterpret_cast< std::vector<std::vector<Point> >(*)>(_a[2])),(*reinterpret_cast< int(*)>(_a[3])));
             if (_a[0]) *reinterpret_cast< double*>(_a[0]) = _r; }  break;
-        case 31: _t->make_snapshot(); break;
-        case 32: _t->histogram_alternative((*reinterpret_cast< Mat(*)>(_a[1]))); break;
-        case 33: { double _r = _t->counting_contour((*reinterpret_cast< Mat(*)>(_a[1])),(*reinterpret_cast< Mat(*)>(_a[2])));
+        case 33: _t->make_snapshot(); break;
+        case 34: _t->histogram_alternative((*reinterpret_cast< Mat(*)>(_a[1]))); break;
+        case 35: { double _r = _t->counting_contour((*reinterpret_cast< Mat(*)>(_a[1])),(*reinterpret_cast< Mat(*)>(_a[2])));
             if (_a[0]) *reinterpret_cast< double*>(_a[0]) = _r; }  break;
-        case 34: _t->separate_hand(); break;
-        case 35: { Mat _r = _t->rescale_hand((*reinterpret_cast< Mat(*)>(_a[1])));
+        case 36: _t->separate_hand(); break;
+        case 37: { Mat _r = _t->rescale_hand((*reinterpret_cast< Mat(*)>(_a[1])));
             if (_a[0]) *reinterpret_cast< Mat*>(_a[0]) = _r; }  break;
         default: ;
         }
@@ -181,9 +186,9 @@ int LeptonThread::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 36)
+        if (_id < 38)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 36;
+        _id -= 38;
     }
     return _id;
 }

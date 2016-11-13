@@ -64,6 +64,8 @@ public slots:
   void switchon_recognize();
   void switchon_rescale();
   void switchon_subbg();
+  void switchon_concave();
+  void switchon_save_prev();
   void get_BG();
 
 
@@ -94,6 +96,8 @@ private:
    Mat Canny_conts;
    Mat opencvmat_values;
    Mat background;
+   Mat hand_convex;
+   std::vector<Mat> sequence;
    int hist[3][256];
    int hottest_point;
    int coolest_point;
@@ -107,6 +111,8 @@ private:
    bool sub_background;
    bool recognize;
    bool rescale;
+   bool mode_concave;
+   bool save_prev;
    int ppmode;
 
    int width;
@@ -123,9 +129,15 @@ private:
    void mr_skeleton(Mat input, Mat &output);
    void finding_edges(Mat input, Mat &output);
    void save_hist();
+   Mat get_mask_classic(); //by threshold +biggest contour
+   Mat get_cont_and_mask(Mat image_mask);
    Mat correct_mask(Mat mask_to_correct);
+   std::vector<std::vector<cv::Point> >get_vector_with_conts(Mat image_mask_and_conts);
+   int ruturn_biggest_index(std::vector<std::vector<Point> > conto);
    Mat sub_BG();
-
+   void concave(Mat image_cont, std::vector<std::vector<Point> > conto, int biggest);
+   void manage_history(Mat image);
+   void contours_on_fingers(Mat image,Point fingers_begin,Point fingers_end);
 
    uint8_t result[PACKET_SIZE*PACKETS_PER_FRAME];
    uint16_t *frameBuffer;

@@ -91,6 +91,8 @@ void create_buttons(QWidget *mywig, QThread *thr)
     button_skeleton ->setGeometry(390, 320, 100, 30);
 
 
+    QPushButton *button_concave = new QPushButton("Concave",mywig);
+    button_concave -> setGeometry(520,215,100,30);
     QPushButton *button_mediane = new QPushButton("Mediane",mywig);
     button_mediane -> setGeometry(520,255,100,30);
     QPushButton *button_get_BG = new QPushButton("Get BG",mywig);
@@ -108,6 +110,7 @@ void create_buttons(QWidget *mywig, QThread *thr)
     QPushButton *button_separate_hand = new QPushButton("Separate",mywig);
     button_separate_hand ->setGeometry(650,40,100,30);
 
+
     QObject::connect(button_FFC, SIGNAL(clicked()), thr, SLOT(performFFC()));
     QObject::connect(button_rainbow, SIGNAL(clicked()),thr,SLOT(change_colormap_rainbow()));
     QObject::connect(button_grayscale, SIGNAL(clicked()),thr,SLOT(change_colormap_gray()));
@@ -120,6 +123,7 @@ void create_buttons(QWidget *mywig, QThread *thr)
     QObject::connect(button_close, SIGNAL(clicked()),thr,SLOT(switchon_close()));
     QObject::connect(button_sobel, SIGNAL(clicked()),thr,SLOT(switchon_sobel()));
     QObject::connect(button_skeleton, SIGNAL(clicked()),thr,SLOT(switchon_skeleton()));
+    QObject::connect(button_concave, SIGNAL(clicked()),thr,SLOT(switchon_concave()));
     QObject::connect(button_mediane, SIGNAL(clicked()),thr,SLOT(switchon_mediane()));
     QObject::connect(button_get_BG, SIGNAL(clicked()),thr,SLOT(get_BG()));
     QObject::connect(button_agc_en, SIGNAL(clicked()),thr,SLOT(enableAGC()));
@@ -167,6 +171,8 @@ void create_checkboxes(QWidget *mywig,QThread *thr)
     checkbox_count_contour ->setGeometry(650,190,100,20);
     QCheckBox *checkbox_rescale = new QCheckBox("rescale",mywig);
     checkbox_rescale ->setGeometry(650,210,100,20);
+    QCheckBox *checkbox_prev = new QCheckBox("prev",mywig);
+    checkbox_prev ->setGeometry(650,230,100,20);
 
     QObject::connect(checkbox_subbg, SIGNAL(toggled(bool)),thr,SLOT(switchon_subbg()));
     QObject::connect(checkbox_reco, SIGNAL(toggled(bool)),thr,SLOT(switchon_recognize()));
@@ -175,6 +181,7 @@ void create_checkboxes(QWidget *mywig,QThread *thr)
     QObject::connect(checkbox_hull, SIGNAL(toggled(bool)),thr,SLOT(switchon_hull()));
     QObject::connect(checkbox_count_contour, SIGNAL(toggled(bool)),thr,SLOT(switchon_conting_countour()));
     QObject::connect(checkbox_rescale, SIGNAL(toggled(bool)),thr,SLOT(switchon_rescale()));
+    QObject::connect(checkbox_prev, SIGNAL(toggled(bool)),thr,SLOT(switchon_save_prev()));
 }
 
 void create_screen(QWidget *mywig,QThread *thr)
