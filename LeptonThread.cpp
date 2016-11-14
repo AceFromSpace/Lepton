@@ -628,25 +628,14 @@ Mat LeptonThread::cut_wirst_2(Mat img_hand,std::vector<std::vector<cv::Point> >c
     img_hand.copyTo(temp);
 
      Vec4f lines = draw_fit_line(temp,conto[biggest]);
-/*
-     Point end_of_hand(0,0);
-     int c = lines[3] - (lines[1] / lines[0]) * lines[2];
-     int d = top_hand.y - (lines[0] / lines[1]) * top_hand.x;
-     int a_a = (lines[1] * lines[1] - lines[0] * lines[0]) / (lines[1] * lines[0]);
-     end_of_hand.x = (d - c) / a_a;
-     end_of_hand.y = end_of_hand.x *lines[1] / lines[0] + c;
-*/
+
      Mat temp_for_line=Mat::zeros(temp.size(),CV_8UC1);
      Mat temp_mask;
      mask.copyTo(temp_mask);
      cvtColor(temp_mask,temp_mask,CV_BGR2GRAY);
-     int lenght=50;
 
+     int lenght=50;
      int i = -temp.cols/2;
-     int index_of_smallest = 0;
-     int smallest_value = 999;
-     int index_of_biggest = 2;
-     int biggest_value = 0;
      int wirsts_values [temp.cols];
 
      while(i < temp.cols/2)
@@ -657,33 +646,18 @@ Mat LeptonThread::cut_wirst_2(Mat img_hand,std::vector<std::vector<cv::Point> >c
          int line_lenght = countNonZero(temp_mask&temp_for_line);
          wirsts_values[i+temp.cols/2]=line_lenght;
 
-         if(line_lenght < smallest_value && line_lenght > 3)
-         {
-             smallest_value= line_lenght;
-             index_of_smallest = i;
-         }
-         if(line_lenght > biggest_value)
-         {
-             biggest_value = line_lenght;
-             index_of_biggest = i;
-         }
-
          i=i+1;
          temp_for_line= Mat::zeros(temp.size(),CV_8UC1);
      }
 
-     imshow("mask",temp_mask);
-     index_of_smallest = calc_wirst(temp, wirsts_values,temp.cols) - temp.cols/2;
-     Point base_smallest(lines[2]-index_of_smallest*lines[0],lines[3]-index_of_smallest*lines[1]);
-     line(temp,Point(base_smallest.x -1*lines[1]*lenght, base_smallest.y +lines[0]*lenght),Point(base_smallest.x +lines[1]*lenght, base_smallest.y-lines[0]*lenght),Scalar(255,255,255),1);
 
-     Point base_biggest(lines[2]-index_of_biggest*lines[0],lines[3]-index_of_biggest*lines[1]);
-     //line(temp,Point(base_biggest.x -1*lines[1]*lenght, base_biggest.y +lines[0]*lenght),Point(base_biggest.x +lines[1]*lenght, base_biggest.y-lines[0]*lenght),Scalar(255,0,255),1);
+     int index_of_smallest = calc_wirst(temp, wirsts_values,temp.cols) - temp.cols/2;
+     Point base_smallest(lines[2]-index_of_smallest*lines[0],lines[3]-index_of_smallest*lines[1]);
+     line(temp,Point(base_smallest.x -1*lines[1]*lenght, base_smallest.y +lines[0]*lenght),Point(base_smallest.x +lines[1]*lenght, base_smallest.y-lines[0]*lenght),Scalar(0,0,0),3);
 
      circle(temp,top_hand,2,Scalar(0,255,0),-1);
-     //circle(temp,end_of_hand,2,Scalar(0,255,255),-1);
-     imshow("jojo",temp);
-/*
+
+
      std::vector<std::vector<cv::Point> > contours;
      Mat temp_gray;
      cvtColor(temp,temp_gray,CV_BGR2GRAY);
@@ -691,16 +665,20 @@ Mat LeptonThread::cut_wirst_2(Mat img_hand,std::vector<std::vector<cv::Point> >c
      findContours (temp_gray,contours,CV_RETR_EXTERNAL,CV_CHAIN_APPROX_SIMPLE);//CV_CHAIN_APPROX_SIMPLE , CV_CHAIN_APPROX_TC89_L1, CV_CHAIN_APPROX_TC89_KCOS,CV_CHAIN_APPROX_NONE
      mask = Mat::zeros(opencvmat.size(),CV_8UC3);
 
-     int index_biggest=0;
+     int index_of_cont_hand =0;
      for(uint i =0;i<contours.size();i++)
      {
-         if(contours[i].size()>contours[index_biggest].size())index_biggest=i;
+         if(pointPolygonTest(contours[i],top_hand,true) >= -5)
+         {
+             index_of_cont_hand=i;
+             break;
+         }
      }
 
-     drawContours(mask,contours,index_biggest,Scalar(255,255,255),CV_FILLED);
+    drawContours(mask,contours,index_of_cont_hand,Scalar(255,255,255),CV_FILLED);
+    imshow("mask",mask);
+    temp=temp&mask;
 
-     temp=temp&mask;
-*/
      return temp;
 }
 bool LeptonThread::find_direction(Mat img_hand, Point point_throught)
