@@ -43,6 +43,7 @@ LeptonThread::LeptonThread() : QThread()
     background=Mat::zeros(Size(width,height),CV_16UC1);
     hottest_point=0;
     coolest_point=65535;
+    Point top_hand = Point(0,0);
 
     for(int i=0;i<6;i++)
     {
@@ -233,7 +234,7 @@ void LeptonThread::separate_hand()
     }
 
     mask = correct_mask(mask);
-      postprocessing(mask);
+    postprocessing(mask);
     cont= get_cont_and_mask(mask);
 
 
@@ -243,14 +244,16 @@ void LeptonThread::separate_hand()
     double hull_coverage;
     double contour_ratio;
 
-    if (draw_line)cont= cut_wirst(cont,contours,index_biggest);//changes mask also
-    if(rescale)cont= rescale_hand(mask);
-    if(mode_concave)concave(cont,contours,index_biggest);
+    if(draw_line) cont= cut_wirst_2(cont,contours,index_biggest);//changes mask also
+    if(mode_concave) concave(cont,contours,index_biggest);
+
+    if(rescale) cont= rescale_hand(mask);
+
     if(mode_hull) hull_coverage = draw_convex_hull(cont,contours,index_biggest);
 
     if(histogram_on) histogram_alternative(cont);
     if(counting_contours_on) contour_ratio=counting_contour(cont,mask);
-    if(recognize)recognize_gesture(hull_coverage,contour_ratio);
+    if(recognize) recognize_gesture(hull_coverage,contour_ratio);
 
     Size new_size(400,300);
     resize(cont,cont,new_size);
@@ -316,47 +319,47 @@ void LeptonThread::save_hist()
 
 void LeptonThread::histogram_alternative(Mat image)
 {
-std::vector<Mat> bgr;
-split(image,bgr);
-int hist_size = 256;
-float range[] = {0,256};
-const float* histRange = {range};
+    std::vector<Mat> bgr;
+    split(image,bgr);
+    int hist_size = 256;
+    float range[] = {0,256};
+    const float* histRange = {range};
 
-bool uniform =true; bool accumulate = false;
+    bool uniform =true; bool accumulate = false;
 
-Mat b_hist, g_hist, r_hist;
+    Mat b_hist, g_hist, r_hist;
 
-calcHist(&bgr[0],1,0, Mat(),b_hist,1,&hist_size,&histRange,uniform,accumulate);
-calcHist(&bgr[1],1,0, Mat(),g_hist,1,&hist_size,&histRange,uniform,accumulate);
-calcHist(&bgr[2],1,0, Mat(),r_hist,1,&hist_size,&histRange,uniform,accumulate);
+    calcHist(&bgr[0],1,0, Mat(),b_hist,1,&hist_size,&histRange,uniform,accumulate);
+    calcHist(&bgr[1],1,0, Mat(),g_hist,1,&hist_size,&histRange,uniform,accumulate);
+    calcHist(&bgr[2],1,0, Mat(),r_hist,1,&hist_size,&histRange,uniform,accumulate);
 
-int hist_w = 512; int hist_h = 300*3;
-int bin_w = cvRound ((double)hist_w/hist_size);
+    int hist_w = 512; int hist_h = 300*3;
+    int bin_w = cvRound ((double)hist_w/hist_size);
 
-Mat histImage(hist_h,hist_w,CV_8UC3, Scalar(255,255,255));
+    Mat histImage(hist_h,hist_w,CV_8UC3, Scalar(255,255,255));
 
-int bottom = hist_h/10*9;
+    int bottom = hist_h/10*9;
 
 
-if(colormap==colormap_grayscale)
-{
-    for(int i =1;i <hist_size;i++)
+    if(colormap==colormap_grayscale)
     {
-        rectangle(histImage,Point(bin_w*i, bottom),Point(bin_w*(i+1) ,bottom-4*cvRound(b_hist.at<float>(i))), Scalar(0,0,0),-1);
+        for(int i =1;i <hist_size;i++)
+        {
+            rectangle(histImage,Point(bin_w*i, bottom),Point(bin_w*(i+1) ,bottom-4*cvRound(b_hist.at<float>(i))), Scalar(0,0,0),-1);
+        }
     }
-}
 
- else
-{
-    for(int i =1;i <hist_size;i++)
+     else
     {
-        rectangle(histImage,Point(bin_w*i, bottom/3),Point(bin_w*(i+1) ,bottom/3-cvRound(b_hist.at<float>(i))), Scalar(255,0,0),-1);
-        rectangle(histImage,Point(bin_w*i, bottom*2/3),Point(bin_w*(i+1) ,bottom*2/3-cvRound(g_hist.at<float>(i))), Scalar(0,255,0),-1);
-        rectangle(histImage,Point(bin_w*i, bottom),Point(bin_w*(i+1) ,bottom-cvRound(r_hist.at<float>(i))), Scalar(0,0,255),-1);
+        for(int i =1;i <hist_size;i++)
+        {
+            rectangle(histImage,Point(bin_w*i, bottom/3),Point(bin_w*(i+1) ,bottom/3-cvRound(b_hist.at<float>(i))), Scalar(255,0,0),-1);
+            rectangle(histImage,Point(bin_w*i, bottom*2/3),Point(bin_w*(i+1) ,bottom*2/3-cvRound(g_hist.at<float>(i))), Scalar(0,255,0),-1);
+            rectangle(histImage,Point(bin_w*i, bottom),Point(bin_w*(i+1) ,bottom-cvRound(r_hist.at<float>(i))), Scalar(0,0,255),-1);
+        }
     }
-}
-imshow("CalcHist",histImage);
-histImage.copyTo(image_histogram);
+    imshow("CalcHist",histImage);
+    histImage.copyTo(image_histogram);
 }
 
 double LeptonThread::counting_contour(Mat image, Mat mask)
@@ -379,20 +382,12 @@ double LeptonThread::counting_contour(Mat image, Mat mask)
     int number_of_pixels_hand = countNonZero(temp_mask);
 
 
-
-
     double ratio = (double)number_of_pixels_hand/number_of_pixels_countour;
-
-
-
-
-
 
 
     emit updateText("countur:"+ QString::number(number_of_pixels_countour)+ "\n"
                     +"Field:"+QString::number(number_of_pixels_hand)+"\n"
                     +"Radio:"+QString::number(ratio,'f',2));
-
 
     Mat temp_find_con;
     temp.copyTo(temp_find_con);
@@ -627,6 +622,148 @@ int margin=6;
 }
 }
 
+Mat LeptonThread::cut_wirst_2(Mat img_hand,std::vector<std::vector<cv::Point> >conto,int biggest)
+{
+    Mat temp(opencvmat.size(),CV_8UC3);
+    img_hand.copyTo(temp);
+
+     Vec4f lines = draw_fit_line(temp,conto[biggest]);
+/*
+     Point end_of_hand(0,0);
+     int c = lines[3] - (lines[1] / lines[0]) * lines[2];
+     int d = top_hand.y - (lines[0] / lines[1]) * top_hand.x;
+     int a_a = (lines[1] * lines[1] - lines[0] * lines[0]) / (lines[1] * lines[0]);
+     end_of_hand.x = (d - c) / a_a;
+     end_of_hand.y = end_of_hand.x *lines[1] / lines[0] + c;
+*/
+     Mat temp_for_line=Mat::zeros(temp.size(),CV_8UC1);
+     Mat temp_mask;
+     mask.copyTo(temp_mask);
+     cvtColor(temp_mask,temp_mask,CV_BGR2GRAY);
+     int lenght=50;
+
+     int i = -temp.cols/2;
+     int index_of_smallest = 0;
+     int smallest_value = 999;
+     int index_of_biggest = 2;
+     int biggest_value = 0;
+     int wirsts_values [temp.cols];
+
+     while(i < temp.cols/2)
+     {
+         Point base(lines[2]-i*lines[0],lines[3]-i*lines[1]);
+         line(temp_for_line,Point(base.x -1*lines[1]*lenght, base.y +lines[0]*lenght),Point(base.x +lines[1]*lenght, base.y-lines[0]*lenght),Scalar(255,255,255),1);
+
+         int line_lenght = countNonZero(temp_mask&temp_for_line);
+         wirsts_values[i+temp.cols/2]=line_lenght;
+
+         if(line_lenght < smallest_value && line_lenght > 3)
+         {
+             smallest_value= line_lenght;
+             index_of_smallest = i;
+         }
+         if(line_lenght > biggest_value)
+         {
+             biggest_value = line_lenght;
+             index_of_biggest = i;
+         }
+
+         i=i+1;
+         temp_for_line= Mat::zeros(temp.size(),CV_8UC1);
+     }
+
+     imshow("mask",temp_mask);
+     index_of_smallest = calc_wirst(temp, wirsts_values,temp.cols) - temp.cols/2;
+     Point base_smallest(lines[2]-index_of_smallest*lines[0],lines[3]-index_of_smallest*lines[1]);
+     line(temp,Point(base_smallest.x -1*lines[1]*lenght, base_smallest.y +lines[0]*lenght),Point(base_smallest.x +lines[1]*lenght, base_smallest.y-lines[0]*lenght),Scalar(255,255,255),1);
+
+     Point base_biggest(lines[2]-index_of_biggest*lines[0],lines[3]-index_of_biggest*lines[1]);
+     //line(temp,Point(base_biggest.x -1*lines[1]*lenght, base_biggest.y +lines[0]*lenght),Point(base_biggest.x +lines[1]*lenght, base_biggest.y-lines[0]*lenght),Scalar(255,0,255),1);
+
+     circle(temp,top_hand,2,Scalar(0,255,0),-1);
+     //circle(temp,end_of_hand,2,Scalar(0,255,255),-1);
+     imshow("jojo",temp);
+/*
+     std::vector<std::vector<cv::Point> > contours;
+     Mat temp_gray;
+     cvtColor(temp,temp_gray,CV_BGR2GRAY);
+
+     findContours (temp_gray,contours,CV_RETR_EXTERNAL,CV_CHAIN_APPROX_SIMPLE);//CV_CHAIN_APPROX_SIMPLE , CV_CHAIN_APPROX_TC89_L1, CV_CHAIN_APPROX_TC89_KCOS,CV_CHAIN_APPROX_NONE
+     mask = Mat::zeros(opencvmat.size(),CV_8UC3);
+
+     int index_biggest=0;
+     for(uint i =0;i<contours.size();i++)
+     {
+         if(contours[i].size()>contours[index_biggest].size())index_biggest=i;
+     }
+
+     drawContours(mask,contours,index_biggest,Scalar(255,255,255),CV_FILLED);
+
+     temp=temp&mask;
+*/
+     return temp;
+}
+bool LeptonThread::find_direction(Mat img_hand, Point point_throught)
+{
+    Mat temp;
+    img_hand.copyTo(temp);
+    cvtColor(temp, temp, CV_BGR2GRAY);
+    Rect rect_left(Point(0,0) ,Point(point_throught.x,60));
+    Rect rect_right(Point(point_throught.x,0) ,Point(80 ,60));
+    Mat left = temp(rect_left);
+    Mat right = temp(rect_right);
+    if(countNonZero(left) > countNonZero(right))
+    {
+        return false;
+    }
+    return true;
+}
+
+
+Vec4f LeptonThread::draw_fit_line(Mat image_hand, std::vector<cv::Point> contour)
+{
+    Vec4f main_line;
+    fitLine(contour,main_line,2,0,0.01,0.01);
+    int lefty=(-main_line[2] * main_line[1] / (main_line[0] + 0.001)) + main_line[3];
+    int righty = ((image_hand.cols - main_line[2]) * main_line[1] / main_line[0]) + main_line[3];
+    line(image_hand,Point(image_hand.cols - 1,righty),Point(0,lefty),Scalar(255,0,0),1);
+    return main_line;
+}
+int LeptonThread::calc_wirst(Mat img_hand, int* tab_of_wirsts,int size)
+{
+    int index_biggest=0;
+    for (int i = 0;i < size; i++)
+    {
+        if(tab_of_wirsts[i] > tab_of_wirsts[index_biggest])
+        {
+            index_biggest =i;
+        }
+    }
+    bool direction = find_direction(img_hand,top_hand);
+
+    int index_smallest=0;
+
+    int start = index_biggest + tab_of_wirsts[index_biggest] ;
+    if(!direction)
+    {
+        if (start < 0)
+        {
+            start = 0;
+        }
+        index_smallest = start;
+        for(int i = index_biggest;i<start;i++)
+        {
+            if(tab_of_wirsts[index_smallest] > tab_of_wirsts[i])
+            {
+                index_smallest = i;
+            }
+        }
+
+    }
+
+    return index_smallest;
+}
+
 void LeptonThread::get_BG()
 {
     opencvmat_values.copyTo(background);
@@ -724,6 +861,7 @@ void LeptonThread::concave(Mat image_cont, std::vector<std::vector<Point> > cont
            circle(temp,center,2,Scalar(150,255,250),-1);
 
            Point direct((conto[biggest][convdef[biggest][biggest_conv_index][0]].x+conto[biggest][convdef[biggest][biggest_conv_index][1]].x )/2,(conto[biggest][convdef[biggest][biggest_conv_index][0]].y + conto[biggest][convdef[biggest][biggest_conv_index][1]].y )/2);
+           top_hand = direct;
            circle(temp,direct,2,Scalar(255,255,250),-1);
 
                contours_on_fingers(temp,center,direct);

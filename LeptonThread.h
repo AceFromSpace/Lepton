@@ -98,6 +98,7 @@ private:
    Mat background;
    Mat hand_convex;
    std::vector<Mat> sequence;
+   Point top_hand;
    int hist[3][256];
    int hottest_point;
    int coolest_point;
@@ -123,15 +124,18 @@ private:
    int slider_value_canny;
 
    Mat cut_wirst(Mat img_hand, std::vector<std::vector<Point> > conto, int biggest);
-
+   Mat cut_wirst_2(Mat img_hand, std::vector<std::vector<Point> > conto, int biggest);
    void recognize_gesture(double hull, double conts);
    void postprocessing(Mat image);
    void mr_skeleton(Mat input, Mat &output);
    void finding_edges(Mat input, Mat &output);
    void save_hist();
+   bool find_direction(Mat img_hand, Point point_throught);//false-left ,true -right
    Mat get_mask_classic(); //by threshold +biggest contour
    Mat get_cont_and_mask(Mat image_mask);
    Mat correct_mask(Mat mask_to_correct);
+   Vec4f draw_fit_line(Mat image_hand, std::vector<cv::Point> contour);
+   int calc_wirst(Mat img_hand, int* tab_of_wirsts, int size);//returns index of wirst
    std::vector<std::vector<cv::Point> >get_vector_with_conts(Mat image_mask_and_conts);
    int ruturn_biggest_index(std::vector<std::vector<Point> > conto);
    Mat sub_BG();
