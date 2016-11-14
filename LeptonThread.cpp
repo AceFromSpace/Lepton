@@ -241,8 +241,8 @@ void LeptonThread::separate_hand()
     std::vector<std::vector<cv::Point> > contours = get_vector_with_conts(cont);
     int index_biggest=ruturn_biggest_index(contours);
 
-    double hull_coverage;
-    double contour_ratio;
+    double hull_coverage = 0;
+    double contour_ratio = 0;
 
     if(draw_line) cont= cut_wirst_2(cont,contours,index_biggest);//changes mask also
     if(mode_concave) concave(cont,contours,index_biggest);
@@ -266,28 +266,31 @@ double LeptonThread::draw_convex_hull(Mat image, std::vector<std::vector<cv::Poi
     Mat temp;
     image.copyTo(temp);
     std::vector<std::vector<Point> > hull(conto.size());
+    Mat mask_temp;
+    cvtColor(mask, mask_temp,CV_BGR2GRAY);
+    findContours (mask_temp,hull,CV_RETR_EXTERNAL,CV_CHAIN_APPROX_SIMPLE);
 
-    convexHull(Mat(conto[biggest]),hull[biggest],false);
-    Scalar pink(255,0,255);
-    drawContours(temp,hull,biggest,pink,1,8,std::vector<Vec4i>(),0,Point());
+    Point2f center;
+    float radius;
+    minEnclosingCircle(Mat(hull[0]),center,radius);
 
     Mat temp_gray;
     temp.copyTo(temp_gray);
-    Size new_size(320,240);
-    resize(temp,temp,new_size);
-    imshow("hull",temp);
-    image_hull =temp;
+    image_hull = temp;
 
-    Mat field(temp_gray.size(),CV_8UC1);
+    Mat field = Mat::zeros(temp_gray.size(),CV_8UC1);
     Scalar white(255,255,255);
-    drawContours(field,hull,biggest,white,-1,8,std::vector<Vec4i>(),0,Point());
-    int field_under_hull =countNonZero(field);
-    cvtColor(temp_gray,temp_gray,CV_BGR2GRAY);
-    int field_hand =countNonZero(temp_gray);
-    double ratio = (double)field_hand/field_under_hull;
+    circle(field,center,radius,white,-1);
 
-    resize(temp_gray,temp_gray,new_size);
+    int field_under_circle =countNonZero(field);
+    cvtColor(temp_gray,temp_gray,CV_BGR2GRAY);
+
+    int field_hand =countNonZero(temp_gray);
+    double ratio = (double)field_hand/field_under_circle;
+
+
     imshow("fdsf",temp_gray);
+    imshow("circle",field);
 
     std::ostringstream ss;
     ss<<hull[biggest].size() ;
@@ -542,86 +545,6 @@ Mat LeptonThread::rescale_hand(Mat image_mask)
 
 }
 
-Mat LeptonThread::cut_wirst(Mat img_hand,std::vector<std::vector<cv::Point> >conto,int biggest)
-{
-    Mat temp(opencvmat.size(),CV_8UC3);
-    img_hand.copyTo(temp);
-
-    std::vector<std::vector<int> > hull(conto.size());
-
-    convexHull(Mat(conto[biggest]),hull[biggest],false);
-    std::vector<std::vector<Vec4i> > convdef(conto.size());
-    if(hull[biggest].size()>2)
-    {
-    convexityDefects(conto[biggest],hull[biggest],convdef[biggest]);
-
-
-  Point wrist1(80,0);
-  Point wrist2(80,0);
-
-int margin=6;
-
-     for (int i=0 ; i<convdef[biggest].size();i++)
-     {
-         if(convdef[biggest][i][3]>10)
-         {
-         int ind_0 = convdef[biggest][i][0];//start
-         int ind_1 = convdef[biggest][i][1];//end
-         int ind_2 = convdef[biggest][i][2];//defect point
-
-         //circle(temp_gray,conto[biggest][ind_0],2,Scalar(0,0,255),-1);
-         //circle(temp_gray,conto[biggest][ind_1],2,Scalar(0,255,0),-1);
-         //circle(temp_gray,conto[biggest][ind_2],2,Scalar(255,0,0),-1);
-
-         Point temp =conto[biggest][ind_2];
-     if(temp.x>margin)
-     {
-         if(temp.x<wrist1.x)
-         {
-             wrist2=wrist1;
-             wrist1=temp;
-
-         }
-         if(temp.x<wrist2.x && temp.x>wrist1.x)
-         {
-             wrist2=temp;
-         }
-      }
-    }
-
-}
-
-     std::vector<Point> vec;
-     vec.push_back(wrist1);
-     vec.push_back(wrist2);
-     Vec4f lines;
-     fitLine(vec,lines,2,0,0.01,0.01);
-     int lefty=(-lines[2]*lines[1]/lines[0])+lines[3];
-     int righty = ((temp.cols-lines[2])*lines[1]/lines[0])+lines[3];
-     line(temp,Point(temp.cols-1,righty),Point(0,lefty),Scalar(0,0,0),2);
-
-     std::vector<std::vector<cv::Point> > contours;
-     Mat temp_gray;
-     cvtColor(temp,temp_gray,CV_BGR2GRAY);
-
-     findContours (temp_gray,contours,CV_RETR_EXTERNAL,CV_CHAIN_APPROX_SIMPLE);//CV_CHAIN_APPROX_SIMPLE , CV_CHAIN_APPROX_TC89_L1, CV_CHAIN_APPROX_TC89_KCOS,CV_CHAIN_APPROX_NONE
-     mask = Mat::zeros(opencvmat.size(),CV_8UC3);
-
-     int index_biggest=0;
-     for(uint i =0;i<contours.size();i++)
-     {
-         if(contours[i].size()>contours[index_biggest].size())index_biggest=i;
-     }
-
-     drawContours(mask,contours,index_biggest,Scalar(255,255,255),CV_FILLED);
-
-     temp=temp&mask;
-     imshow("jojo",temp);
-     return temp;
-
-}
-}
-
 Mat LeptonThread::cut_wirst_2(Mat img_hand,std::vector<std::vector<cv::Point> >conto,int biggest)
 {
     Mat temp(opencvmat.size(),CV_8UC3);
@@ -655,9 +578,6 @@ Mat LeptonThread::cut_wirst_2(Mat img_hand,std::vector<std::vector<cv::Point> >c
      Point base_smallest(lines[2]-index_of_smallest*lines[0],lines[3]-index_of_smallest*lines[1]);
      line(temp,Point(base_smallest.x -1*lines[1]*lenght, base_smallest.y +lines[0]*lenght),Point(base_smallest.x +lines[1]*lenght, base_smallest.y-lines[0]*lenght),Scalar(0,0,0),3);
 
-     circle(temp,top_hand,2,Scalar(0,255,0),-1);
-
-
      std::vector<std::vector<cv::Point> > contours;
      Mat temp_gray;
      cvtColor(temp,temp_gray,CV_BGR2GRAY);
@@ -676,11 +596,11 @@ Mat LeptonThread::cut_wirst_2(Mat img_hand,std::vector<std::vector<cv::Point> >c
      }
 
     drawContours(mask,contours,index_of_cont_hand,Scalar(255,255,255),CV_FILLED);
-    imshow("mask",mask);
     temp=temp&mask;
 
-     return temp;
+    return temp;
 }
+
 bool LeptonThread::find_direction(Mat img_hand, Point point_throught)
 {
     Mat temp;
@@ -697,16 +617,16 @@ bool LeptonThread::find_direction(Mat img_hand, Point point_throught)
     return true;
 }
 
-
 Vec4f LeptonThread::draw_fit_line(Mat image_hand, std::vector<cv::Point> contour)
 {
     Vec4f main_line;
     fitLine(contour,main_line,2,0,0.01,0.01);
     int lefty=(-main_line[2] * main_line[1] / (main_line[0] + 0.001)) + main_line[3];
     int righty = ((image_hand.cols - main_line[2]) * main_line[1] / main_line[0]) + main_line[3];
-    line(image_hand,Point(image_hand.cols - 1,righty),Point(0,lefty),Scalar(255,0,0),1);
+   // line(image_hand,Point(image_hand.cols - 1,righty),Point(0,lefty),Scalar(255,0,0),1);
     return main_line;
 }
+
 int LeptonThread::calc_wirst(Mat img_hand, int* tab_of_wirsts,int size)
 {
     int index_biggest=0;

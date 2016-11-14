@@ -123,7 +123,6 @@ private:
    int slider_value_binary;
    int slider_value_canny;
 
-   Mat cut_wirst(Mat img_hand, std::vector<std::vector<Point> > conto, int biggest);
    Mat cut_wirst_2(Mat img_hand, std::vector<std::vector<Point> > conto, int biggest);
    void recognize_gesture(double hull, double conts);
    void postprocessing(Mat image);
