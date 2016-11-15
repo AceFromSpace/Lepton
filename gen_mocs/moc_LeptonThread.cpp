@@ -64,12 +64,12 @@ static const uint qt_meta_data_LeptonThread[] = {
      621,   33,   33,   33, 0x0a,
      640,   33,   33,   33, 0x0a,
      661,   33,   33,   33, 0x0a,
-     670,  729,  749,   33, 0x0a,
-     756,   33,   33,   33, 0x0a,
-     772,  799,   33,   33, 0x0a,
-     805,  831,  749,   33, 0x0a,
-     842,   33,   33,   33, 0x0a,
-     858,  876,  887,   33, 0x0a,
+     670,  696,  710,   33, 0x0a,
+     717,   33,   33,   33, 0x0a,
+     733,  760,   33,   33, 0x0a,
+     766,  792,  710,   33, 0x0a,
+     803,   33,   33,   33, 0x0a,
+     819,  837,  848,   33, 0x0a,
 
        0        // eod
 };
@@ -93,9 +93,8 @@ static const char qt_meta_stringdata_LeptonThread[] = {
     "switchon_line()\0switchon_recognize()\0"
     "switchon_rescale()\0switchon_subbg()\0"
     "switchon_concave()\0switchon_save_prev()\0"
-    "get_BG()\0"
-    "draw_convex_hull(Mat,std::vector<std::vector<Point> >,int)\0"
-    "image,conto,biggest\0double\0make_snapshot()\0"
+    "get_BG()\0draw_convex_hull(Mat,int)\0"
+    "image,biggest\0double\0make_snapshot()\0"
     "histogram_alternative(Mat)\0image\0"
     "counting_contour(Mat,Mat)\0image,mask\0"
     "separate_hand()\0rescale_hand(Mat)\0"
@@ -140,7 +139,7 @@ void LeptonThread::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id
         case 29: _t->switchon_concave(); break;
         case 30: _t->switchon_save_prev(); break;
         case 31: _t->get_BG(); break;
-        case 32: { double _r = _t->draw_convex_hull((*reinterpret_cast< Mat(*)>(_a[1])),(*reinterpret_cast< std::vector<std::vector<Point> >(*)>(_a[2])),(*reinterpret_cast< int(*)>(_a[3])));
+        case 32: { double _r = _t->draw_convex_hull((*reinterpret_cast< Mat(*)>(_a[1])),(*reinterpret_cast< int(*)>(_a[2])));
             if (_a[0]) *reinterpret_cast< double*>(_a[0]) = _r; }  break;
         case 33: _t->make_snapshot(); break;
         case 34: _t->histogram_alternative((*reinterpret_cast< Mat(*)>(_a[1]))); break;
