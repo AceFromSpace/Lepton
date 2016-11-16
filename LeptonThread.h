@@ -4,7 +4,7 @@
 #include <ctime>
 #include <stdint.h>
 #include <iostream>
-#include<fstream>
+#include <fstream>
 #include <ctime>
 #include <string>
 
@@ -122,8 +122,9 @@ private:
 
    int slider_value_binary;
    int slider_value_canny;
+   int depth_thresh;
 
-   Mat                                  cut_wirst_2(Mat img_hand, std::vector<std::vector<Point> > conto, int biggest);
+   Mat                                  cut_wirst(Mat img_hand, std::vector<std::vector<Point> > conto, int biggest);
    void                                 recognize_gesture(int conv_points, double hull);
    void                                 postprocessing(Mat image);
    void                                 mr_skeleton(Mat input, Mat &output);
@@ -139,10 +140,12 @@ private:
    int                                  ruturn_biggest_index(std::vector<std::vector<Point> > conto);
    Mat                                  sub_BG();
    int                                  concave(Mat image_cont, std::vector<std::vector<Point> > conto, int biggest);
-   double                                 calc_angle(Point point_begin, Point point_end, Point point_conv);
+   double                               calc_angle(Point point_begin, Point point_end, Point point_conv);
    void                                 manage_history(Mat image);
    void                                 contours_on_fingers(Mat image,Point fingers_begin,Point fingers_end);
-
+   void                                 game();
+   bool                                 is_Mat_empty(Mat img);
+   void                                 update_depth_threshold(Mat img_hand, std::vector<Point>  conto);
    uint8_t result[PACKET_SIZE*PACKETS_PER_FRAME];
    uint16_t *frameBuffer;
 

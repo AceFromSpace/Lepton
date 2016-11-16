@@ -12,19 +12,24 @@
 #include <QCheckBox>
 #include <QMenu>
 #include <QMenuBar>
+#include <QPixmap>
 
 #include "LeptonThread.h"
 #include "MyLabel.h"
+#include "newwindow.h"
 #include <iostream>
 #include <opencv2/opencv.hpp>
 
          
 using namespace cv;
-void create_buttons(QWidget *mywig,QThread *thr);
+void create_buttons(QWidget *mywig, QWidget *mywig_game, QThread *thr);
 void create_sliders(QWidget *mywig,QThread *thr);
 void create_checkboxes(QWidget *mywig,QThread *thr);
-void create_screen(QWidget *mywig,QThread *thr);
+void open_window();
 void create_labels(QWidget *mywig,QThread *thr);
+void create_game_window(QWidget *mywig_game, QThread *thr);
+
+
 int main( int argc, char **argv )
 {
 
@@ -32,6 +37,11 @@ int main( int argc, char **argv )
 	
 	QWidget *myWidget = new QWidget;
     myWidget->setGeometry(10, 50, 800, 350);
+
+    QWidget *window_with_game = new QWidget;
+    window_with_game -> setGeometry(10, 50, 1000, 350);
+    window_with_game -> hide();
+
     LeptonThread *thread = new LeptonThread();
 
     QImage myImage= QImage(320, 240, QImage::Format_RGB888);
@@ -47,19 +57,27 @@ int main( int argc, char **argv )
     myLabel.setPixmap(QPixmap::fromImage(myImage));
     QObject::connect(thread, SIGNAL(updateImage(QImage)), &myLabel, SLOT(setImage(QImage)));
 
-    create_screen(myWidget,thread);
-    create_buttons(myWidget,thread);
+    MyLabel myLabel_game(window_with_game);
+    myLabel_game.setGeometry(10, 10, 320, 240);
+    myLabel_game.setPixmap(QPixmap::fromImage(myImage));
+    QObject::connect(thread, SIGNAL(updateImage(QImage)), &myLabel_game, SLOT(setImage(QImage)));
+
+
+
+    create_buttons(myWidget,window_with_game, thread);
     create_sliders(myWidget,thread);
     create_checkboxes(myWidget,thread);
     create_labels(myWidget,thread);
+    create_game_window(window_with_game,thread);
 
-	thread->start();
+    thread -> start();
 	
-	myWidget->show();
+    myWidget -> show();
 
 	return a.exec();
 }
-void create_buttons(QWidget *mywig, QThread *thr)
+
+void create_buttons(QWidget *mywig, QWidget *mywig_game, QThread *thr)
 {
 
     QPushButton *button_rainbow = new QPushButton("Rainbow Scale", mywig);
@@ -107,8 +125,8 @@ void create_buttons(QWidget *mywig, QThread *thr)
     QPushButton *button_snap_shot = new QPushButton("Snapshot",mywig);
     button_snap_shot -> setGeometry(650,320,100,30);
 
-    QPushButton *button_separate_hand = new QPushButton("Separate",mywig);
-    button_separate_hand ->setGeometry(650,40,100,30);
+    QPushButton *button_game = new QPushButton("Game",mywig);
+    button_game ->setGeometry(650,40,100,30);
 
 
     QObject::connect(button_FFC, SIGNAL(clicked()), thr, SLOT(performFFC()));
@@ -129,8 +147,8 @@ void create_buttons(QWidget *mywig, QThread *thr)
     QObject::connect(button_agc_en, SIGNAL(clicked()),thr,SLOT(enableAGC()));
     QObject::connect(button_agc_dis, SIGNAL(clicked()),thr,SLOT(disableAGC()));
     QObject::connect(button_snap_shot, SIGNAL(clicked()),thr,SLOT(make_snapshot()));
-    QObject::connect(button_separate_hand, SIGNAL(clicked()),thr,SLOT(separate_hand()));
-
+    QObject::connect(button_game, SIGNAL(clicked()),mywig_game ,SLOT(show()));
+    QObject::connect(button_game, SIGNAL(clicked()),mywig ,SLOT(hide()));
 }
 
 void create_sliders(QWidget *mywig,QThread *thr)
@@ -184,10 +202,6 @@ void create_checkboxes(QWidget *mywig,QThread *thr)
     QObject::connect(checkbox_prev, SIGNAL(toggled(bool)),thr,SLOT(switchon_save_prev()));
 }
 
-void create_screen(QWidget *mywig,QThread *thr)
-{
-}
-
 void create_labels(QWidget *mywig,QThread *thr)
 {
     QLabel *label_pixel= new QLabel("pixel",mywig);
@@ -206,5 +220,20 @@ void create_labels(QWidget *mywig,QThread *thr)
     QObject::connect(thr, SIGNAL(updateTextContours(QString)),label_contours,SLOT(setText(QString)));
     QObject::connect(thr, SIGNAL(updateTextContoursHull(QString)),label_contours_hull,SLOT(setText(QString)));
     QObject::connect(thr, SIGNAL(updateTextReco(QString)),label_contours_hull,SLOT(setText(QString)));
+
+}
+
+void create_game_window(QWidget *mywig_game, QThread *thr)
+{
+    QPushButton *button_start_game = new QPushButton("start", mywig_game);
+    button_start_game -> setGeometry(800, 50, 150, 100);
+
+    QPushButton *button_exit_game = new QPushButton("exit", mywig_game);
+    button_exit_game -> setGeometry(800, 200, 150, 100);
+
+    QPixmap pix("8987012345con.jpg");
+    QLabel enemy_window(mywig_game);
+    enemy_window.setGeometry(340, 10, 320, 240);
+    enemy_window.setPixmap(pix.scaled(100,100,Qt::KeepAspectRatio));
 
 }
