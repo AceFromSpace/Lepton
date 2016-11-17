@@ -6,6 +6,7 @@
 #include <math.h>
 #include <string>
 #include <iostream>
+#include <QString>
 
 #define PACKET_SIZE 164
 #define PACKET_ SIZE_UINT16 (PACKET_SIZE/2)
@@ -28,6 +29,7 @@ LeptonThread::LeptonThread() : QThread()
     rescale = false;
     sub_background = false;
     save_prev = false;
+    mode_test = false;
     colormap = colormap_rainbow;
     ppmode = 0;
     slider_value_binary = 150;
@@ -45,6 +47,7 @@ LeptonThread::LeptonThread() : QThread()
     coolest_point = 65535;
     Point top_hand = Point(0,0);
     depth_thresh = 10;
+    ratioxy= 0;
 
     for(int i = 0;i < 6;i++)
     {
@@ -155,7 +158,6 @@ void LeptonThread::run()
 }
 
 //voids
-
 void LeptonThread::make_snapshot()
 {
     time_t t = time(0);
@@ -224,7 +226,7 @@ void LeptonThread::separate_hand()
     mask = Mat::zeros(opencvmat.size(),CV_8UC3);
     if(!sub_background)
     {
-       mask=get_mask_classic();
+        mask=get_mask_classic();
     }
     else
     {
@@ -240,23 +242,32 @@ void LeptonThread::separate_hand()
     cont= get_cont_and_mask(mask);
 
     std::vector<std::vector<cv::Point> > contours = get_vector_with_conts(cont);
-    int index_biggest=ruturn_biggest_index(contours);
+    int index_biggest=return_biggest_index(contours);
     double hull_coverage = 0;
-    double conv_points = 0; //becouse of global point
+    double conv_points = 0;
+    double circ_to_field = 0;
+    int recognized_symbol = 0;
 
-
-    if(draw_line) cont= cut_wirst(cont,contours,index_biggest);//changes mask also
+    if(draw_line)
+    {
+        cont= cut_wirst(cont,contours,index_biggest);//changes mask also
+        circ_to_field = circut_to_field_ratio(mask);
+    }
     if(mode_concave)conv_points =  concave(cont,contours,index_biggest); //conv_points +
     if(rescale) cont = rescale_hand(mask);
     if(mode_hull) hull_coverage = draw_convex_hull(cont,index_biggest);
     if(histogram_on) histogram_alternative(cont);
     //if(counting_contours_on) contour_ratio = counting_contour(cont,mask);
-    if(recognize) recognize_gesture(conv_points, hull_coverage);
-
+    if(recognize) recognized_symbol = recognize_gesture(conv_points, hull_coverage);
+    if(mode_test)
+    {
+        test(conv_points,hull_coverage,circ_to_field,recognized_symbol);
+        mode_test = false;
+    }
     Size new_size(400,300);
-    resize(cont,cont,new_size);
-    imshow("contour",cont);
-    imshow("mask",mask);
+    resize(cont, cont, new_size);
+    imshow("contour", cont);
+    imshow("mask", mask);
 }
 
 double LeptonThread::draw_convex_hull(Mat image, int biggest)
@@ -269,7 +280,7 @@ double LeptonThread::draw_convex_hull(Mat image, int biggest)
     cvtColor(mask, mask_temp, CV_BGR2GRAY);
     findContours (mask_temp, hull, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
 
-    int index_biggest = ruturn_biggest_index(hull);
+    int index_biggest = return_biggest_index(hull);
     Point2f center;
     float radius;
     minEnclosingCircle(Mat(hull[index_biggest]),center,radius);
@@ -282,7 +293,8 @@ double LeptonThread::draw_convex_hull(Mat image, int biggest)
     Scalar white(255, 255, 255);
     circle(field ,center ,radius, white, -1);
 
-    int field_under_circle = countNonZero(field);
+
+    int field_under_circle = PI * radius * radius;
     cvtColor(temp_gray, temp_gray, CV_BGR2GRAY);
 
     int field_hand = countNonZero(temp_gray);
@@ -294,10 +306,8 @@ double LeptonThread::draw_convex_hull(Mat image, int biggest)
 
     std::ostringstream ss;
     ss<<hull[biggest].size();
-    putText(image_params,"Hull:"+ ss.str()+ "/n" ,Point(5,30), 1, 2, 0);
-    imshow("bal",image_params);
-    emit updateTextContours("Hull:"+ QString::number(hull[biggest].size())+"/n"
-                            + "Ratio h/f"+ QString::number(ratio,'f',2));
+    putText(image_params,"Hull:"+ ss.str() + "/n" ,Point(5,30), 1, 2, 0);
+    emit updateTextContours("Ratio cicle/field:" + QString::number(ratio,'f',2));
 
     return ratio;
 
@@ -478,30 +488,33 @@ void LeptonThread::postprocessing(Mat image)
     }
 }
 
-void LeptonThread::recognize_gesture(int conv_points, double hull)
+int LeptonThread::recognize_gesture(int conv_points, double hull)
 {
+    //stone - 1 ,paper 2, scisors 3
     double coverage_ratio_threshold = 0.64;
     if(conv_points == 1)
     {
         emit updateTextReco("Scizors");
+        return 3;
     }
     else if(conv_points > 1)
     {
         emit updateTextReco("Paper");
+        return 2;
     }
     else
     {
         if (hull > coverage_ratio_threshold)
         {
             emit updateTextReco("Stone");
+            return 1;
         }
         else
         {
             emit updateTextReco("Paper");
+            return 2;
         }
-
     }
-
 }
 
 Mat LeptonThread::rescale_hand(Mat image_mask)
@@ -634,7 +647,7 @@ Vec4f LeptonThread::draw_fit_line(Mat image_hand, std::vector<cv::Point> contour
     fitLine(contour, main_line, 2, 0, 0.01, 0.01);
     int lefty=(-main_line[2] * main_line[1] / (main_line[0] + 0.001)) + main_line[3];
     int righty = ((image_hand.cols - main_line[2]) * main_line[1] / main_line[0]) + main_line[3];
-    line(image_hand,Point(image_hand.cols - 1,righty),Point(0,lefty),Scalar(255,0,0),1);
+    //line(image_hand,Point(image_hand.cols - 1,righty),Point(0,lefty),Scalar(255,0,0),1);
     return main_line;
 }
 
@@ -748,9 +761,6 @@ int LeptonThread::concave(Mat image_cont, std::vector<std::vector<Point> > conto
         std::vector<std::vector<Vec4i> > convdef(conto.size());
         std::vector<Point>  def_points;
 
-
-
-
         if(hull.size() > 0 && hull[biggest].size() > 2)
         {
             drawContours(temp,hull_to_draw, biggest, Scalar(255,0,255), 1, 8, std::vector<Vec4i>(), 0, Point());
@@ -781,7 +791,11 @@ int LeptonThread::concave(Mat image_cont, std::vector<std::vector<Point> > conto
 
                if(convdef[biggest][i][3] > convdef[biggest][biggest_conv_index][3])
                     {
-                    biggest_conv_index = i;
+                        biggest_conv_index = i;
+                        if(depth_thresh / 3 * 2 > convdef[biggest][i][3])
+                        {
+                            counter_big--;
+                        }
                     }
            }
            Point center(0,0);
@@ -863,11 +877,11 @@ std::vector<std::vector<cv::Point> > LeptonThread::get_vector_with_conts(Mat ima
 {
     std::vector<std::vector<cv::Point> > conto;
     cvtColor(image_mask_and_conts, image_mask_and_conts, CV_BGR2GRAY);
-    findContours (image_mask_and_conts, conto, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+    findContours (image_mask_and_conts, conto, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
     return conto;
 }
 
-int LeptonThread::ruturn_biggest_index(std::vector<std::vector<Point> > conto)
+int LeptonThread::return_biggest_index(std::vector<std::vector<Point> > conto)
 {
     int output= 0;
     for(uint i = 0;i < conto.size();i++)
@@ -925,27 +939,70 @@ bool LeptonThread::is_Mat_empty(Mat img)
 
 void LeptonThread::update_depth_threshold(Mat img_hand, std::vector<Point>  conto)
 {
-
+    Mat temp = Mat::zeros(Size(width,height),CV_8UC1);
     RotatedRect min_rect = minAreaRect(Mat(conto));
     Point2f rect_points[4];
     min_rect.points(rect_points);
 
-    int side1 = cv::norm(rect_points[0] - rect_points[1]);
-    int side2 = cv::norm(rect_points[1] - rect_points[2]);
+    double side1 = cv::norm(rect_points[0] - rect_points[1]);
+    double side2 = cv::norm(rect_points[1] - rect_points[2]);
+
     if (side1 > side2)
     {
         depth_thresh = side1;
+        ratioxy = side1 / side2;
     }
     else
     {
         depth_thresh = side2;
+        ratioxy = side2 / side1;
     }
     for(int i =0 ;i < 4;i++)
     {
-        line(img_hand,rect_points[i],rect_points[i % 4],255,1);
+        line(temp,rect_points[i],rect_points[i % 4],255,1);
     }
-      imshow("img",img_hand);
 
+    imshow("img_temp", temp);
+
+}
+
+double LeptonThread::circut_to_field_ratio(Mat image)
+{
+    Mat temp;
+    image.copyTo(temp);
+    std::vector<std::vector<cv::Point> > conto = get_vector_with_conts(temp);
+    int biggest = return_biggest_index(conto);
+    float circut = arcLength(conto[biggest], false);
+    float field = contourArea(conto[biggest], false);
+    float ratio = field / circut;
+    emit updateText("field/cicut:" + QString::number(ratio,'f',2));
+    return ratio;
+}
+
+void LeptonThread::test(int number_of_concave, double circle_to_field , double circut_to_field, int reco_sign)
+{
+    time_t t = time(0);
+    struct tm * now = localtime(& t);
+    std::ostringstream ss;
+    ss << now-> tm_hour * 3600 + now -> tm_min * 60 + now -> tm_sec;
+    imwrite("test_prog/" + ss.str() + ".jpg", image_hull);
+
+    std::ostringstream ss_coffs;
+    std::fstream file;
+    file.open("test_prog/test",std::ios::app);
+    QString qs;
+    std::string space = " ";
+    ss_coffs << number_of_concave;
+    ss_coffs << space;
+    ss_coffs << circle_to_field;
+    ss_coffs << space;
+    ss_coffs << circut_to_field;
+    ss_coffs << space;
+    ss_coffs << ratioxy;
+    ss_coffs << space;
+    ss_coffs << reco_sign;
+    file<<ss.str() + space + ss_coffs.str() <<std::endl;
+    file.close();
 }
 
 //////////////////////////
@@ -1061,4 +1118,8 @@ void LeptonThread::switchon_concave()
 void LeptonThread::switchon_save_prev()
 {
     save_prev =! save_prev;
+}
+void LeptonThread::switchon_test()
+{
+    mode_test =!mode_test;
 }

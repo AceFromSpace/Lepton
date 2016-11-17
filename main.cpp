@@ -108,15 +108,14 @@ void create_buttons(QWidget *mywig, QWidget *mywig_game, QThread *thr)
     QPushButton *button_skeleton = new QPushButton("Skeleton", mywig);
     button_skeleton ->setGeometry(390, 320, 100, 30);
 
-
     QPushButton *button_concave = new QPushButton("Concave",mywig);
     button_concave -> setGeometry(520,215,100,30);
     QPushButton *button_mediane = new QPushButton("Mediane",mywig);
     button_mediane -> setGeometry(520,255,100,30);
     QPushButton *button_get_BG = new QPushButton("Get BG",mywig);
     button_get_BG -> setGeometry(520,290,100,30);
-    QPushButton *button_sub_BG = new QPushButton("Sub_BG",mywig);
-    button_sub_BG -> setGeometry(520,320,100,30);
+    QPushButton *button_test = new QPushButton("Test",mywig);
+    button_test -> setGeometry(520,320,100,30);
 
     QPushButton *button_agc_en = new QPushButton("AGC ON",mywig);
     button_agc_en-> setGeometry(650,255,100,30);
@@ -127,7 +126,6 @@ void create_buttons(QWidget *mywig, QWidget *mywig_game, QThread *thr)
 
     QPushButton *button_game = new QPushButton("Game",mywig);
     button_game ->setGeometry(650,40,100,30);
-
 
     QObject::connect(button_FFC, SIGNAL(clicked()), thr, SLOT(performFFC()));
     QObject::connect(button_rainbow, SIGNAL(clicked()),thr,SLOT(change_colormap_rainbow()));
@@ -144,6 +142,7 @@ void create_buttons(QWidget *mywig, QWidget *mywig_game, QThread *thr)
     QObject::connect(button_concave, SIGNAL(clicked()),thr,SLOT(switchon_concave()));
     QObject::connect(button_mediane, SIGNAL(clicked()),thr,SLOT(switchon_mediane()));
     QObject::connect(button_get_BG, SIGNAL(clicked()),thr,SLOT(get_BG()));
+    QObject::connect(button_test, SIGNAL(clicked()),thr,SLOT(switchon_test()));
     QObject::connect(button_agc_en, SIGNAL(clicked()),thr,SLOT(enableAGC()));
     QObject::connect(button_agc_dis, SIGNAL(clicked()),thr,SLOT(disableAGC()));
     QObject::connect(button_snap_shot, SIGNAL(clicked()),thr,SLOT(make_snapshot()));

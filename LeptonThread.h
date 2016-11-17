@@ -66,8 +66,8 @@ public slots:
   void switchon_subbg();
   void switchon_concave();
   void switchon_save_prev();
+  void switchon_test();
   void get_BG();
-
 
   double draw_convex_hull(Mat image, int biggest);
   void make_snapshot();
@@ -114,6 +114,7 @@ private:
    bool rescale;
    bool mode_concave;
    bool save_prev;
+   bool mode_test;
    int ppmode;
 
    int width;
@@ -123,9 +124,10 @@ private:
    int slider_value_binary;
    int slider_value_canny;
    int depth_thresh;
+   double ratioxy;
 
    Mat                                  cut_wirst(Mat img_hand, std::vector<std::vector<Point> > conto, int biggest);
-   void                                 recognize_gesture(int conv_points, double hull);
+   int recognize_gesture(int conv_points, double hull);
    void                                 postprocessing(Mat image);
    void                                 mr_skeleton(Mat input, Mat &output);
    void                                 finding_edges(Mat input, Mat &output);
@@ -137,7 +139,7 @@ private:
    Vec4f                                draw_fit_line(Mat image_hand, std::vector<cv::Point> contour);
    int                                  calc_wirst(Mat img_hand, int* tab_of_wirsts, int size);//returns index of wirst
    std::vector<std::vector<cv::Point> > get_vector_with_conts(Mat image_mask_and_conts);
-   int                                  ruturn_biggest_index(std::vector<std::vector<Point> > conto);
+   int                                  return_biggest_index(std::vector<std::vector<Point> > conto);
    Mat                                  sub_BG();
    int                                  concave(Mat image_cont, std::vector<std::vector<Point> > conto, int biggest);
    double                               calc_angle(Point point_begin, Point point_end, Point point_conv);
@@ -146,6 +148,8 @@ private:
    void                                 game();
    bool                                 is_Mat_empty(Mat img);
    void                                 update_depth_threshold(Mat img_hand, std::vector<Point>  conto);
+   void                                 test(int number_of_concave, double circle_to_field , double circut_to_field, int reco_sign);
+   double                               circut_to_field_ratio(Mat image);
    uint8_t result[PACKET_SIZE*PACKETS_PER_FRAME];
    uint16_t *frameBuffer;
 
