@@ -128,7 +128,7 @@ private:
 
    Mat                                  cut_wirst(Mat img_hand, std::vector<std::vector<Point> > conto, int biggest);
    int recognize_gesture(int conv_points, double hull);
-   void                                 postprocessing(Mat image);
+   void postprocessing(Mat image);
    void                                 mr_skeleton(Mat input, Mat &output);
    void                                 finding_edges(Mat input, Mat &output);
    void                                 save_hist();

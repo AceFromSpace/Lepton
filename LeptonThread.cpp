@@ -168,8 +168,8 @@ void LeptonThread::make_snapshot()
     //setWindowProperty(ss.str(),CV_WND_PROP_FULLSCREEN,CV_WINDOW_KEEPRATIO);
    //imwrite(ss.str()+"d"+".jpg",image_params);
    // imshow(ss.str(),opencvmat);
-   // imwrite(ss.str()+"t"+".jpg",opencvmat);
-   // imwrite(ss.str()+"m" +".jpg",mask);
+     //imwrite(ss.str()+"t"+".jpg",opencvmat);
+     //imwrite(ss.str()+"m" +".jpg",mask);
    // imwrite(ss.str()+".jpg", cont);
    if(mode_hull) imwrite(ss.str() + "hu" + ".jpg",image_hull);
    if(histogram_on) imwrite(ss.str()+ "h" + ".jpg",image_histogram);
@@ -252,6 +252,7 @@ void LeptonThread::separate_hand()
     {
         cont= cut_wirst(cont,contours,index_biggest);//changes mask also
         circ_to_field = circut_to_field_ratio(mask);
+        contours = get_vector_with_conts(cont);
     }
     if(mode_concave)conv_points =  concave(cont,contours,index_biggest); //conv_points +
     if(rescale) cont = rescale_hand(mask);
@@ -272,38 +273,28 @@ void LeptonThread::separate_hand()
 
 double LeptonThread::draw_convex_hull(Mat image, int biggest)
 {
-    Mat temp;
-    imshow("rasia1",image);
-    image.copyTo(temp);
+
     std::vector<std::vector<Point> > hull;
     Mat mask_temp;
     cvtColor(mask, mask_temp, CV_BGR2GRAY);
-    findContours (mask_temp, hull, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
-
+    findContours (mask_temp, hull, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
     int index_biggest = return_biggest_index(hull);
     Point2f center;
     float radius;
     minEnclosingCircle(Mat(hull[index_biggest]),center,radius);
 
-    Mat temp_gray;
-    temp.copyTo(temp_gray);
-    image_hull = temp;
 
-    Mat field = Mat::zeros(temp_gray.size(), CV_8UC1);
-    Scalar white(255, 255, 255);
-    circle(field ,center ,radius, white, -1);
+    double field_under_circle = PI * radius * radius;
+    //double field_hand = contourArea(hull[index_biggest], false);
 
 
-    int field_under_circle = PI * radius * radius;
-    cvtColor(temp_gray, temp_gray, CV_BGR2GRAY);
-
-    int field_hand = countNonZero(temp_gray);
+    Mat field = Mat::zeros(image.size(),CV_8UC3);
+    //circle(field,center,radius,Scalar(255,255,255),-1);
+    //drawContours(field, hull, index_biggest , Scalar(55,55,55), CV_FILLED);
+    cvtColor(image,field,CV_BGR2GRAY);
+    double field_hand = countNonZero(field);
     double ratio = (double)field_hand / field_under_circle;
-
-
-    imshow("rasia",temp_gray);
-    imshow("circle",field);
-
+    imshow("field",field);
     std::ostringstream ss;
     ss<<hull[biggest].size();
     putText(image_params,"Hull:"+ ss.str() + "/n" ,Point(5,30), 1, 2, 0);
@@ -434,7 +425,6 @@ void LeptonThread::postprocessing(Mat image)
         cvtColor(temp,temp,CV_GRAY2BGR);
         temp.copyTo(image);
     }
-
     switch(ppmode)
     {
         case 0:
@@ -520,16 +510,15 @@ int LeptonThread::recognize_gesture(int conv_points, double hull)
 Mat LeptonThread::rescale_hand(Mat image_mask)
 {
 
-    int minvalue = 65535;
-    int maxvalue = 0;
+    double minvalue = 65535;
+    double maxvalue = 0;
     Mat mask_gray = Mat::zeros(image_mask.size(), CV_8UC1);
     cvtColor(mask, mask_gray, CV_BGR2GRAY);
-
     for(int i=0;i<mask_gray.cols;i++)
     {
      for(int j=0;j<mask_gray.rows;j++)
         {        
-        int pixel_val = opencvmat_values.at<short>(Point(i,j));
+        int pixel_val = opencvmat_values.at<ushort>(Point(i,j));
         uchar pixel_con = mask_gray.at<uchar>(Point(i,j));
         if(pixel_con == 0) continue;
 
@@ -538,6 +527,7 @@ Mat LeptonThread::rescale_hand(Mat image_mask)
 
         }
     }
+
     if(maxvalue>hottest_point)hottest_point=maxvalue;
     else maxvalue=hottest_point;
 
@@ -622,6 +612,7 @@ Mat LeptonThread::cut_wirst(Mat img_hand, std::vector<std::vector<cv::Point> >co
      drawContours(mask, contours, index_of_cont_hand, Scalar(255,255,255), CV_FILLED);
      temp = temp & mask;
      update_depth_threshold(mask,contours[index_of_cont_hand]);
+     imshow("temp2", temp);
      return temp;
 }
 
@@ -643,11 +634,14 @@ bool LeptonThread::find_direction(Mat img_hand, Point point_throught)
 
 Vec4f LeptonThread::draw_fit_line(Mat image_hand, std::vector<cv::Point> contour)
 {
+    Mat temp;
+    image_hand.copyTo(temp);
     Vec4f main_line;
-    fitLine(contour, main_line, 2, 0, 0.01, 0.01);
-    int lefty=(-main_line[2] * main_line[1] / (main_line[0] + 0.001)) + main_line[3];
-    int righty = ((image_hand.cols - main_line[2]) * main_line[1] / main_line[0]) + main_line[3];
-    //line(image_hand,Point(image_hand.cols - 1,righty),Point(0,lefty),Scalar(255,0,0),1);
+    fitLine(contour, main_line, 1, 0, 0.01, 0.01);
+    int lefty = main_line[3];
+    int righty = ((image_hand.cols - 1) * main_line[1] / main_line[0]) + main_line[3];
+    line(temp,Point(image_hand.cols - 1,righty),Point(0,lefty),Scalar(255,0,0),1);
+    imshow("dasdsdsda",temp);
     return main_line;
 }
 
@@ -714,14 +708,15 @@ void LeptonThread::get_BG()
 Mat LeptonThread::sub_BG()
 {
     Mat temp=Mat::zeros(Size(width,height), CV_16UC1);
-    temp= abs(opencvmat_values- background);
+    absdiff(background , opencvmat_values, temp);
     Mat output=Mat::zeros(temp.size(), CV_8UC3);
+    int thresh = 50;
     for(int i = 0;i < temp.cols;i++)
     {
      for(int j = 0;j < temp.rows;j++)
         {
-        int pixel_val = temp.at<short>(Point(i,j));
-         if(pixel_val > 40)
+        int pixel_val = temp.at<ushort>(Point(i,j));
+         if(pixel_val > thresh )
          {
             output.at<Vec3b>(Point(i,j))[0] = 255;
             output.at<Vec3b>(Point(i,j))[1] = 255;
@@ -740,7 +735,11 @@ Mat LeptonThread::correct_mask(Mat mask_to_correct)
     temp = temp & opencvmat_base;
     threshold(temp, temp, slider_value_binary, 255, THRESH_BINARY);
     cvtColor(temp, temp, CV_GRAY2BGR);
-    return temp;
+    std::vector<std::vector<Point> > to_draw =  get_vector_with_conts(temp);
+    int biggest = return_biggest_index(to_draw);
+    Mat output = Mat::zeros(temp.size(), CV_8UC3);
+    drawContours(output,to_draw, biggest, Scalar(255,255,255),-1);
+    return output;
 }
 
 int LeptonThread::concave(Mat image_cont, std::vector<std::vector<Point> > conto, int biggest)
@@ -767,36 +766,48 @@ int LeptonThread::concave(Mat image_cont, std::vector<std::vector<Point> > conto
             convexityDefects(conto[biggest], hull[biggest], convdef[biggest]);
 
             int biggest_conv_index = 0;
+            for (uint i = 0 ; i < convdef[biggest].size();i++)
+            {
+                if(convdef[biggest][i][3] > convdef[biggest][biggest_conv_index][3])
+                     {
+                         biggest_conv_index = i;
+                     }
+            }
 
             for (uint i = 0 ; i < convdef[biggest].size();i++)
             {                  
+                if(i == biggest_conv_index)continue;
+
                 conter_all++;
                 int ind_0 = convdef[biggest][i][0];//start
                 int ind_1 = convdef[biggest][i][1];//end
                 int ind_2 = convdef[biggest][i][2];//defect point
-                circle(temp, conto[biggest][ind_0], 2, Scalar(0,0,255), -1);
-                circle(temp, conto[biggest][ind_1], 2, Scalar(0,255,0), -1);
+               // circle(temp, conto[biggest][ind_0], 2, Scalar(0,0,255), -1);
+               // circle(temp, conto[biggest][ind_1], 2, Scalar(0,255,0), -1);
 
                 double angle = calc_angle(conto[biggest][ind_0],conto[biggest][ind_1],conto[biggest][ind_2]);
-                if((convdef[biggest][i][3] > 20 * slider_value_canny) && (angle < 55) && (angle > 10))
+                if((convdef[biggest][i][3] > 20 * slider_value_canny) )
                     {
                         circle(temp, conto[biggest][ind_2], 2, Scalar(255,255,0), -1);
                         counter_big++;
+                    }
+                else if((angle < 55) && (angle > 10))
+                    {
+                        circle(temp, conto[biggest][ind_2], 2, Scalar(255,0,255), -1);
+                        counter_big++;
+
                     }
                 else
                     {
                         circle(temp, conto[biggest][ind_2], 2, Scalar(255,0,0), -1);
                     }
                 def_points.push_back(conto[biggest][ind_1]);
-
-               if(convdef[biggest][i][3] > convdef[biggest][biggest_conv_index][3])
+                if((convdef[biggest][i][3] > 20 * slider_value_canny) && (angle < 55) && (angle > 10))
                     {
-                        biggest_conv_index = i;
-                        if(depth_thresh / 3 * 2 > convdef[biggest][i][3])
-                        {
-                            counter_big--;
-                        }
+                    circle(temp, conto[biggest][ind_2], 2, Scalar(0,255,255), -1);
+
                     }
+
            }
            Point center(0,0);
            for(uint i = 0;i < def_points.size();i++)
@@ -806,11 +817,11 @@ int LeptonThread::concave(Mat image_cont, std::vector<std::vector<Point> > conto
            }
             center.x = center.x / def_points.size();
             center.y = center.y / def_points.size();
-            circle(temp, center, 2, Scalar(150,255,250), -1);
+            circle(temp, center, 2, Scalar(0,255,0), -1);
 
             Point direct((conto[biggest][convdef[biggest][biggest_conv_index][0]].x + conto[biggest][convdef[biggest][biggest_conv_index][1]].x ) / 2,(conto[biggest][convdef[biggest][biggest_conv_index][0]].y + conto[biggest][convdef[biggest][biggest_conv_index][1]].y ) / 2);
             top_hand = center;
-            circle(temp,direct,2,Scalar(255,255,250),-1);
+            //circle(temp,direct,2,Scalar(255,255,250),-1);
 
             //contours_on_fingers(temp,center,direct);
         }
@@ -851,6 +862,7 @@ Mat LeptonThread::get_mask_classic()
     Mat temp;
     opencvmat_base.copyTo(temp);
     threshold(temp,temp, slider_value_binary, 255, THRESH_BINARY);
+
     std::vector<std::vector<cv::Point> > contours;
     int index_biggest = 0;
     findContours (temp, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);//CV_CHAIN_APPROX_SIMPLE , CV_CHAIN_APPROX_TC89_L1, CV_CHAIN_APPROX_TC89_KCOS,CV_CHAIN_APPROX_NONE
@@ -863,9 +875,9 @@ Mat LeptonThread::get_mask_classic()
         }
     }
     drawContours(mask, contours, index_biggest, Scalar(255,255,255), CV_FILLED);
+    imshow("mask", mask);
 
 return mask;
-
 }
 
 Mat LeptonThread::get_cont_and_mask(Mat image_mask)
