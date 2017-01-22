@@ -168,11 +168,11 @@ void LeptonThread::make_snapshot()
     //setWindowProperty(ss.str(),CV_WND_PROP_FULLSCREEN,CV_WINDOW_KEEPRATIO);
    //imwrite(ss.str()+"d"+".jpg",image_params);
    // imshow(ss.str(),opencvmat);
-     //imwrite(ss.str()+"t"+".jpg",opencvmat);
+   imwrite(ss.str()+"t"+".jpg",opencvmat);
      //imwrite(ss.str()+"m" +".jpg",mask);
    // imwrite(ss.str()+".jpg", cont);
    if(mode_hull) imwrite(ss.str() + "hu" + ".jpg",image_hull);
-   if(histogram_on) imwrite(ss.str()+ "h" + ".jpg",image_histogram);
+   if(histogram_on) imwrite(ss.str() + "h" + ".jpg",image_histogram);
    if(counting_contours_on) imwrite(ss.str() + "c" + ".jpg" ,Canny_conts);
    imwrite(ss.str() + "con" + ".jpg", hand_convex);
    if(save_prev)
@@ -481,7 +481,7 @@ void LeptonThread::postprocessing(Mat image)
 int LeptonThread::recognize_gesture(int conv_points, double hull)
 {
     //stone - 1 ,paper 2, scisors 3
-    double coverage_ratio_threshold = 0.64;
+    double coverage_ratio_threshold = 0.61;
     if(conv_points == 1)
     {
         emit updateTextReco("Scizors");
@@ -638,8 +638,9 @@ Vec4f LeptonThread::draw_fit_line(Mat image_hand, std::vector<cv::Point> contour
     image_hand.copyTo(temp);
     Vec4f main_line;
     fitLine(contour, main_line, 1, 0, 0.01, 0.01);
-    int lefty = main_line[3];
-    int righty = ((image_hand.cols - 1) * main_line[1] / main_line[0]) + main_line[3];
+    int b = main_line[3] -main_line[2]*main_line[1]/main_line[0];
+    int lefty = b;
+    int righty = ((image_hand.cols - 1) * main_line[1] / main_line[0])+  b;
     line(temp,Point(image_hand.cols - 1,righty),Point(0,lefty),Scalar(255,0,0),1);
     imshow("dasdsdsda",temp);
     return main_line;
@@ -789,12 +790,12 @@ int LeptonThread::concave(Mat image_cont, std::vector<std::vector<Point> > conto
                 if((convdef[biggest][i][3] > 20 * slider_value_canny) )
                     {
                         circle(temp, conto[biggest][ind_2], 2, Scalar(255,255,0), -1);
-                        counter_big++;
+
                     }
                 else if((angle < 55) && (angle > 10))
                     {
                         circle(temp, conto[biggest][ind_2], 2, Scalar(255,0,255), -1);
-                        counter_big++;
+
 
                     }
                 else
@@ -805,7 +806,7 @@ int LeptonThread::concave(Mat image_cont, std::vector<std::vector<Point> > conto
                 if((convdef[biggest][i][3] > 20 * slider_value_canny) && (angle < 55) && (angle > 10))
                     {
                     circle(temp, conto[biggest][ind_2], 2, Scalar(0,255,255), -1);
-
+                    counter_big++;
                     }
 
            }
@@ -997,11 +998,11 @@ void LeptonThread::test(int number_of_concave, double circle_to_field , double c
     struct tm * now = localtime(& t);
     std::ostringstream ss;
     ss << now-> tm_hour * 3600 + now -> tm_min * 60 + now -> tm_sec;
-    imwrite("test_prog/" + ss.str() + ".jpg", image_hull);
+    imwrite("test_prog5/" + ss.str() + ".jpg", cont);
 
     std::ostringstream ss_coffs;
     std::fstream file;
-    file.open("test_prog/test",std::ios::app);
+    file.open("test_prog5/test5",std::ios::app);
     QString qs;
     std::string space = " ";
     ss_coffs << number_of_concave;
